@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Crypto Trader</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #141627;
+      color: #fff;
+      margin: 0; padding: 0;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px;}
+    header { text-align: center; margin-bottom: 25px; }
+    h1 { font-size: 2.4em; margin: 10px 0; }
+    .desc { color: #fbc531; font-size: 1.1em; }
+    main { display: flex; flex-wrap: wrap; gap: 32px; }
+    section { flex: 1 1 350px; background: #22244a; border-radius: 12px; padding: 18px 16px 18px 16px; margin-bottom: 10px;}
+    .news-section h2, .signals-section h2 { color: #fbc531; margin-bottom: 16px;}
+    #news-feed { max-height: 420px; overflow-y: auto;}
+    .news-item {
+      background: #282c52;
+      margin-bottom: 11px;
+      border-radius: 7px;
+      padding: 10px 12px;
+      border-left: 5px solid #fbc531;
+    }
+    .news-title { font-weight: bold; color: #fbc531;}
+    .news-date { font-size: 0.92em; color: #a4a7be; margin-bottom: 2px;}
+    .news-link { color: #7ed6df; text-decoration: underline;}
+    .tf-buttons { margin-bottom: 10px; }
+    .tf-buttons button {
+      background: #282c52;
+      border: none; border-radius: 5px;
+      color: #fff; font-weight: bold;
+      margin-right: 5px; padding: 6px 14px;
+      cursor: pointer; font-size: 1em;
+      transition: background 0.2s;
+    }
+    .tf-buttons button.active, .tf-buttons button:hover { background: #fbc531; color: #22244a; }
+    #ai-signals {
+      background: #1a1c38; border-radius: 8px; padding: 13px;
+      min-height: 120px; font-size: 1.08em;
+      color: #fff;
+      white-space: pre-line;
+    }
+    footer { margin-top: 20px; text-align: center; color: #999; font-size: 0.97em; }
+    @media (max-width: 900px) {
+      main { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>AI Crypto Trader</h1>
+      <p class="desc">Новости рынка и торговые сигналы с ИИ в реальном времени</p>
+    </header>
+    <main>
+      <section class="news-section">
+        <h2>Новости</h2>
+        <div id="news-feed"></div>
+      </section>
+      <section class="signals-section">
+        <h2>AI Сигналы (5m / 15m / 1h)</h2>
+        <div class="tf-buttons">
+          <button data-tf="5m">5m</button>
+          <button data-tf="15m" class="active">15m</button>
+          <button data-tf="1h">1h</button>
+        </div>
+        <div id="ai-signals"></div>
+      </section>
+    </main>
+    <footer>
+      <small>&copy; 2025 CryptoAI. Powered by OpenAI, Binance, CryptoPanic, CoinMarketCap</small>
+    </footer>
+  </div>
+  <script>
+    // Измени адрес если backend размещён не на том же домене!
+    const BACKEND_URL = location.hostname.includes("herokuapp") ? "" : "http://localhost:5000";
+
+    function formatDateTime(dt) {
+      if (!dt) return "";
+      const d = new Date(dt);
+      return d.toLocaleString("ru-RU", {hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit'});
+    }
+
+    async function loadNews() {
+      const feed = document.getElementById('news-feed');
+      feed.innerHTML = "<div>Загрузка новостей...</div>";
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/news`);
+        const news = await res.json();
+        feed.innerHTML = "";
+        for (const n of news) {
+          feed.innerHTML += `
+            <div class="news-item">
+              <div class="news-date">${formatDateTime(n.datetime)}</div>
+              <div class="news-title">${n.title}</div>
+              <a href="${n.link}" target="_blank" class="news-link">Источник</a>
+            </div>
+          `;
+        }
+      } catch (e) {
+        feed.innerHTML = "<div>Ошибка загрузки новостей!</div>";
+      }
+    }
+
+    // Таймфреймы AI сигналов
+    let currentTF = "15m";
+    async function loadSignals(tf = "15m") {
+      const box = document.getElementById('ai-signals');
+      box.innerHTML = "<div>AI анализирует рынок...</div>";
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/analyze?tf=${tf}`);
+        const { ai } = await res.json();
+        box.innerHTML = ai.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+      } catch (e) {
+        box.innerHTML = "<div>Ошибка AI анализа!</div>";
+      }
+    }
+
+    // Кнопки таймфреймов
+    document.addEventListener('DOMContentLoaded', () => {
+      loadNews();
+      loadSignals(currentTF);
+      setInterval(loadNews, 70000); // Новости автообновление
+      setInterval(() => loadSignals(currentTF), 80000); // AI сигналы автообновление
+
+      document.querySelectorAll('.tf-buttons button').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.tf-buttons button').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentTF = btn.dataset.tf;
+          loadSignals(currentTF);
+        };
+      });
+    });
+  </script>
+</body>
+</html>
