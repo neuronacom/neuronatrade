@@ -3,140 +3,95 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AI Crypto Trader</title>
+  <title>NEURONA TRADE</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #141627;
-      color: #fff;
-      margin: 0; padding: 0;
-    }
-    .container { max-width: 900px; margin: 0 auto; padding: 20px;}
-    header { text-align: center; margin-bottom: 25px; }
-    h1 { font-size: 2.4em; margin: 10px 0; }
-    .desc { color: #fbc531; font-size: 1.1em; }
-    main { display: flex; flex-wrap: wrap; gap: 32px; }
-    section { flex: 1 1 350px; background: #22244a; border-radius: 12px; padding: 18px 16px 18px 16px; margin-bottom: 10px;}
-    .news-section h2, .signals-section h2 { color: #fbc531; margin-bottom: 16px;}
-    #news-feed { max-height: 420px; overflow-y: auto;}
-    .news-item {
-      background: #282c52;
-      margin-bottom: 11px;
-      border-radius: 7px;
-      padding: 10px 12px;
-      border-left: 5px solid #fbc531;
-    }
-    .news-title { font-weight: bold; color: #fbc531;}
-    .news-date { font-size: 0.92em; color: #a4a7be; margin-bottom: 2px;}
-    .news-link { color: #7ed6df; text-decoration: underline;}
-    .tf-buttons { margin-bottom: 10px; }
-    .tf-buttons button {
-      background: #282c52;
-      border: none; border-radius: 5px;
-      color: #fff; font-weight: bold;
-      margin-right: 5px; padding: 6px 14px;
-      cursor: pointer; font-size: 1em;
-      transition: background 0.2s;
-    }
-    .tf-buttons button.active, .tf-buttons button:hover { background: #fbc531; color: #22244a; }
-    #ai-signals {
-      background: #1a1c38; border-radius: 8px; padding: 13px;
-      min-height: 120px; font-size: 1.08em;
-      color: #fff;
-      white-space: pre-line;
-    }
-    footer { margin-top: 20px; text-align: center; color: #999; font-size: 0.97em; }
-    @media (max-width: 900px) {
-      main { flex-direction: column; }
-    }
+    body { font-family: Arial, sans-serif; background: #0c0c0c; color: #fff; margin: 0; }
+    .container { max-width: 650px; margin: 0 auto; padding: 18px;}
+    header { text-align: center; margin-bottom: 16px;}
+    h1 { font-size: 2em; letter-spacing: 2px; color: #fff; }
+    main { background: #161616; border-radius: 13px; box-shadow: 0 2px 12px #0007; padding: 10px; }
+    .dialogue { min-height: 430px; max-height: 530px; overflow-y: auto; background: #111; border-radius: 8px; padding: 16px; }
+    .msg { margin: 0 0 20px 0; }
+    .msg-time { font-size: 0.85em; color: #777; margin-bottom: 3px;}
+    .msg-news { background: #181818; border-left: 3px solid #bbb; padding: 7px 14px; border-radius: 7px; }
+    .msg-news-title { font-weight: bold; color: #fafafa;}
+    .msg-news-link { color: #888; text-decoration: underline;}
+    .msg-signal { background: #141414; border-left: 3px solid #0ff; color: #0ff; font-weight: bold; padding: 7px 14px; border-radius: 7px; margin-top: 10px;}
+    .msg-signal b { color: #fff; }
+    footer { text-align: center; color: #bbb; margin: 25px 0 0; font-size: 0.95em; }
+    @media (max-width:700px){ .container {padding:4px;} .dialogue{padding:7px;} }
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>AI Crypto Trader</h1>
-      <p class="desc">Новости рынка и торговые сигналы с ИИ в реальном времени</p>
+      <h1>NEURONA TRADE</h1>
+      <div style="color:#aaa;font-size:1em;margin-bottom:12px">AI сигналы и новости с CryptoPanic</div>
     </header>
     <main>
-      <section class="news-section">
-        <h2>Новости</h2>
-        <div id="news-feed"></div>
-      </section>
-      <section class="signals-section">
-        <h2>AI Сигналы (5m / 15m / 1h)</h2>
-        <div class="tf-buttons">
-          <button data-tf="5m">5m</button>
-          <button data-tf="15m" class="active">15m</button>
-          <button data-tf="1h">1h</button>
-        </div>
-        <div id="ai-signals"></div>
-      </section>
+      <div class="dialogue" id="dialogue"></div>
+      <div style="text-align:right;margin-top:8px;">
+        <button id="reloadBtn" style="background:#fff;color:#111;border:none;padding:6px 18px;border-radius:6px;font-weight:bold;cursor:pointer">Обновить сейчас</button>
+      </div>
     </main>
     <footer>
-      <small>&copy; 2025 CryptoAI. Powered by OpenAI, Binance, CryptoPanic, CoinMarketCap</small>
+      <div>2025 &copy; NEURONA TRADE</div>
     </footer>
   </div>
   <script>
-    // !!! Укажи свой Heroku backend:
     const BACKEND_URL = "https://tradeneurona-7da73bd0c5bb.herokuapp.com";
+    const dialogue = document.getElementById('dialogue');
+    let lastNewsLink = "";
+    let lastSignal = "";
 
     function formatDateTime(dt) {
       if (!dt) return "";
       const d = new Date(dt);
-      return d.toLocaleString("ru-RU", {hour: '2-digit', minute: '2-digit', second: '2-digit', day: '2-digit', month: '2-digit'});
+      return d.toLocaleTimeString("ru-RU", {hour: '2-digit', minute: '2-digit', second: '2-digit'}) +
+        " " + d.toLocaleDateString("ru-RU", {day:'2-digit', month:'2-digit'});
     }
 
-    async function loadNews() {
-      const feed = document.getElementById('news-feed');
-      feed.innerHTML = "<div>Загрузка новостей...</div>";
+    function addNews(news) {
+      if (!news || !news.title) return;
+      // Проверка, не выводили ли мы это уже
+      if (news.link === lastNewsLink) return;
+      lastNewsLink = news.link;
+      const div = document.createElement('div');
+      div.className = "msg msg-news";
+      div.innerHTML = `<div class="msg-time">${formatDateTime(news.datetime)}</div>
+        <div class="msg-news-title">${news.title}</div>
+        <a class="msg-news-link" href="${news.link}" target="_blank">Источник</a>`;
+      dialogue.appendChild(div);
+      dialogue.scrollTop = dialogue.scrollHeight;
+    }
+
+    function addSignal(signal) {
+      if (!signal) return;
+      if (signal === lastSignal) return;
+      lastSignal = signal;
+      const div = document.createElement('div');
+      div.className = "msg msg-signal";
+      div.innerHTML = signal.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+      dialogue.appendChild(div);
+      dialogue.scrollTop = dialogue.scrollHeight;
+    }
+
+    async function fetchAndShow() {
       try {
-        const res = await fetch(`${BACKEND_URL}/api/news`);
-        const news = await res.json();
-        feed.innerHTML = "";
-        for (const n of news) {
-          feed.innerHTML += `
-            <div class="news-item">
-              <div class="news-date">${formatDateTime(n.datetime)}</div>
-              <div class="news-title">${n.title}</div>
-              <a href="${n.link}" target="_blank" class="news-link">Источник</a>
-            </div>
-          `;
-        }
-      } catch (e) {
-        feed.innerHTML = "<div>Ошибка загрузки новостей!</div>";
-      }
+        const res = await fetch(`${BACKEND_URL}/api/stream?tf=15m`);
+        const data = await res.json();
+        if (data.news && data.news.length) addNews(data.news[0]);
+        if (data.signal) addSignal(data.signal);
+      } catch (e) { /* ignore */ }
     }
 
-    // Таймфреймы AI сигналов
-    let currentTF = "15m";
-    async function loadSignals(tf = "15m") {
-      const box = document.getElementById('ai-signals');
-      box.innerHTML = "<div>AI анализирует рынок...</div>";
-      try {
-        const res = await fetch(`${BACKEND_URL}/api/analyze?tf=${tf}`);
-        const { ai } = await res.json();
-        box.innerHTML = ai.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
-      } catch (e) {
-        box.innerHTML = "<div>Ошибка AI анализа!</div>";
-      }
-    }
+    document.getElementById('reloadBtn').onclick = fetchAndShow;
 
-    // Кнопки таймфреймов
-    document.addEventListener('DOMContentLoaded', () => {
-      loadNews();
-      loadSignals(currentTF);
-      setInterval(loadNews, 70000); // Новости автообновление
-      setInterval(() => loadSignals(currentTF), 80000); // AI сигналы автообновление
+    // При запуске показать 1 новость и 1 сигнал
+    fetchAndShow();
 
-      document.querySelectorAll('.tf-buttons button').forEach(btn => {
-        btn.onclick = () => {
-          document.querySelectorAll('.tf-buttons button').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          currentTF = btn.dataset.tf;
-          loadSignals(currentTF);
-        };
-      });
-    });
+    // Дальше – каждые 40 секунд подгружать новую новость и сигнал
+    setInterval(fetchAndShow, 40000);
   </script>
 </body>
 </html>
