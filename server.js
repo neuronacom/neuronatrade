@@ -1,76 +1,55 @@
-const express = require('express');
-const fetch = require('node-fetch');
-const { Configuration, OpenAIApi } = require('openai');
-const path = require('path');
+import os
+import requests
+from flask import Flask, jsonify, request
+from flask_cors import CORS
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY")
+CRYPTOPANIC_API_KEY = os.environ.get("CRYPTOPANIC_API_KEY")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
-// Настройки OpenAI через переменную окружения Heroku
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_KEY,
-});
-const openai = new OpenAIApi(configuration);
+app = Flask(__name__)
+CORS(app)
 
-// CryptoPanic (API-ключ хранится в Heroku)
-const CRYPTOPANIC_KEY = process.env.CRYPTOPANIC_TOKEN;
-
-app.use(express.static(path.join(__dirname)));
-
-// Получение свежих новостей
-app.get('/api/news', async (req, res) => {
-  try {
-    const url = `https://cryptopanic.com/api/developer/v2/posts/?auth_token=${CRYPTOPANIC_KEY}&public=true`;
-    const response = await fetch(url);
-    const json = await response.json();
-    const articles = json.results.map(post => ({
-      id: post.id,
-      title: post.title,
-      url: post.url,
-      published: post.published_at
-    }));
-    res.json(articles);
-  } catch (err) {
-    console.error("Ошибка новостей:", err.message);
-    res.status(500).json([]);
-  }
-});
-
-// Получение сигнала от GPT-4o
-app.get('/api/signals', async (req, res) => {
-  try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: `Ты — профессиональный трейдер. Дай точный сигнал по BTC/USDT: LONG или SHORT, только если есть 100% уверенность.
-          
-- Проанализируй стаканы, объёмы, график, индикаторы (RSI, MACD, EMA), настроение рынка, последние новости.
-- Ответ строго в формате:
-{
-  "long": "Уверенный сигнал на LONG. Уровень входа: $XYZ, цель: $ABC, стоп: $DEF",
-  "short": null
-}
-или наоборот. Не давай оба сразу.`
-        },
-        {
-          role: "user",
-          content: "Дай текущий сигнал по BTC/USDT"
+def fetch_btc_signal():
+    # Здесь берём с Binance стакан, анализируем, выбираем сигнал (пример)
+    ticker = requests.get("https://api.binance.com/api/v3/ticker/bookTicker?symbol=BTCUSDT").json()
+    price = float(ticker['bidPrice'])
+    # Эмулируем: если цена > X — лонг, < X — шорт, дальше лучше делать по-настоящему
+    if price > 60000:
+        return {
+            "type": "signal",
+            "text": f"<b>BTC/USDT LONG</b> (Объёмы растут)\nВход: <b>{int(price)}</b><br>Тейк: <b>{int(price*1.01)}</b><br>Стоп: <b>{int(price*0.995)}</b>"
         }
-      ],
-      temperature: 0.8
-    });
+    else:
+        return {
+            "type": "signal",
+            "text": f"<b>BTC/USDT SHORT</b> (Объёмы падают)\nВход: <b>{int(price)}</b><br>Тейк: <b>{int(price*0.985)}</b><br>Стоп: <b>{int(price*1.006)}</b>"
+        }
 
-    const raw = completion.data.choices[0].message.content.trim();
-    const parsed = JSON.parse(raw);
-    res.json(parsed);
-  } catch (err) {
-    console.error("Ошибка GPT:", err.message);
-    res.status(500).json({ error: "AI error" });
-  }
-});
+def fetch_news():
+    url = f"https://cryptopanic.com/api/v1/posts/?auth_token={CRYPTOPANIC_API_KEY}&currencies=BTC&filter=important"
+    news = []
+    try:
+        resp = requests.get(url).json()
+        for n in resp.get('results', [])[:3]:
+            news.append({
+                "type": "news",
+                "text": f"📰 <b>{n.get('title','')}</b> <a href='{n.get('url','')}' target='_blank'>Источник</a>"
+            })
+    except Exception as e:
+        pass
+    return news
 
-app.listen(PORT, () => {
-  console.log(`NEURONA AI сервер запущен на порту ${PORT}`);
-});
+@app.route("/api/feed")
+def api_feed():
+    result = []
+    result.append(fetch_btc_signal())
+    result += fetch_news()
+    return jsonify({"messages": result})
+
+# ----- Для Push (подписка пользователей, потом рассылка через web-push) -----
+# Пока не реализовано (но всё готово — если нужен код для webpush, дай знать)
+# Тут фронт подписывается через ServiceWorker, а сервер хранит endpoint'ы подписчиков
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
