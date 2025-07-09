@@ -8,13 +8,11 @@ CRYPTOPANIC_API_KEY = os.environ.get("CRYPTOPANIC_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 def fetch_btc_signal():
-    # Здесь берём с Binance стакан, анализируем, выбираем сигнал (пример)
     ticker = requests.get("https://api.binance.com/api/v3/ticker/bookTicker?symbol=BTCUSDT").json()
     price = float(ticker['bidPrice'])
-    # Эмулируем: если цена > X — лонг, < X — шорт, дальше лучше делать по-настоящему
     if price > 60000:
         return {
             "type": "signal",
@@ -46,10 +44,6 @@ def api_feed():
     result.append(fetch_btc_signal())
     result += fetch_news()
     return jsonify({"messages": result})
-
-# ----- Для Push (подписка пользователей, потом рассылка через web-push) -----
-# Пока не реализовано (но всё готово — если нужен код для webpush, дай знать)
-# Тут фронт подписывается через ServiceWorker, а сервер хранит endpoint'ы подписчиков
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
