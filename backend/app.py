@@ -3,7 +3,6 @@ import json
 import requests
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from datetime import datetime
 import openai
 
 app = Flask(__name__)
@@ -13,8 +12,6 @@ BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "")
 CRYPTOPANIC_API_KEY = os.environ.get("CRYPTOPANIC_API_KEY", "")
 COINMARKETCAP_API_KEY = os.environ.get("COINMARKETCAP_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-
-openai.api_key = OPENAI_API_KEY
 
 def get_cryptopanic_news():
     url = f"https://cryptopanic.com/api/v1/posts/?auth_token={CRYPTOPANIC_API_KEY}&filter=important"
@@ -55,7 +52,8 @@ def analyze_market_and_generate_signals(prices, order_books, news, timeframe):
     [COIN] [LONG/SHORT] | Вход: [уровень], TP: [уровень], SL: [уровень]
     """
 
-    response = openai.ChatCompletion.create(
+    client = openai.OpenAI(api_key=OPENAI_API_KEY)
+    response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "Ты опытный AI-трейдер, эксперт по фьючерсам, всегда четко и кратко даешь рекомендации и рыночные обзоры на русском."},
@@ -64,7 +62,7 @@ def analyze_market_and_generate_signals(prices, order_books, news, timeframe):
         temperature=0.4,
         max_tokens=900
     )
-    return response.choices[0].message['content']
+    return response.choices[0].message.content
 
 @app.route('/api/news', methods=['GET'])
 def api_news():
