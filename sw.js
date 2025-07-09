@@ -1,9 +1,6 @@
 self.addEventListener('install', e => self.skipWaiting());
 self.addEventListener('activate', e => self.clients.claim());
-
-self.addEventListener('fetch', () => { /* пусто, можно кэшировать */ });
-
-// PUSH (если захочешь делать через сервер)
+self.addEventListener('fetch', () => {});
 self.addEventListener('push', function(event) {
   const data = event.data ? event.data.json() : {};
   event.waitUntil(
@@ -18,7 +15,6 @@ self.addEventListener('push', function(event) {
     )
   );
 });
-
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
   if (event.notification.data && event.notification.data.url) {
