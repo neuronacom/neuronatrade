@@ -1,21 +1,21 @@
 {
-  "name": "NEURONA Trade",
+  "name": "NEURONA Trade AI",
   "short_name": "NEURONA",
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#fff",
-  "theme_color": "#fff",
-  "description": "AI-ассистент для крипто-трейдинга, анализ BTC, сигналы и новости.",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "https://i.ibb.co/XfKRzvcy/27.png",
-      "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "type": "image/png"
     },
     {
-      "src": "https://i.ibb.co/Mk4WpHL9/25-1.png",
-      "type": "image/png",
-      "sizes": "512x512"
+      "src": "https://i.ibb.co/XfKRzvcy/27.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
