@@ -12,29 +12,30 @@ BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "")
 CRYPTOPANIC_API_KEY = os.environ.get("CRYPTOPANIC_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
-# Получаем свежие важные новости с CryptoPanic
-def get_cryptopanic_news(limit=2):
+### --- CryptoPanic: Свежие важные новости --- ###
+def get_cryptopanic_news(limit=5):
     url = f"https://cryptopanic.com/api/v1/posts/?auth_token={CRYPTOPANIC_API_KEY}&filter=important"
-    r = requests.get(url)
-    news = []
-    if r.ok:
-        for n in r.json().get("results", [])[:limit]:
-            dt = n.get("published_at", "")
-            title = n.get("title", "")
-            link = n.get("url", "")
-            news.append({
-                "title": title,
-                "link": link,
-                "datetime": dt
-            })
-    return news
-
-# Цена и объём BTCUSDT с Binance
-def get_btc_binance():
-    url = "https://api.binance.com/api/v3/ticker/24hr"
-    params = {"symbol": "BTCUSDT"}
-    r = requests.get(url, params=params)
     try:
+        r = requests.get(url)
+        r.raise_for_status()
+        results = r.json().get("results", [])
+        news = []
+        for n in results[:limit]:
+            news.append({
+                "title": n.get("title", ""),
+                "url": n.get("url", ""),
+                "published_at": n.get("published_at", "")[:16].replace("T", " "),
+                "source": n.get("source", {}).get("title", "cryptopanic")
+            })
+        return news
+    except Exception:
+        return []
+
+### --- Binance: Цена и объём BTCUSDT --- ###
+def get_btc_binance():
+    try:
+        r = requests.get("https://api.binance.com/api/v3/ticker/24hr", params={"symbol": "BTCUSDT"})
+        r.raise_for_status()
         data = r.json()
         return {
             "price": data["lastPrice"],
@@ -42,68 +43,86 @@ def get_btc_binance():
             "change": data["priceChangePercent"],
             "high": data["highPrice"],
             "low": data["lowPrice"],
-            "quoteVolume": data["quoteVolume"]
+            "quoteVolume": data["quoteVolume"],
+            "timestamp": data.get("closeTime", 0)
         }
     except Exception:
         return {}
 
-# Стакан (orderbook) BTCUSDT с Binance (топ-10)
+### --- Binance: Стакан BTCUSDT --- ###
 def get_btc_orderbook():
-    url = "https://api.binance.com/api/v3/depth"
-    params = {"symbol": "BTCUSDT", "limit": 10}
-    r = requests.get(url, params=params)
     try:
+        r = requests.get("https://api.binance.com/api/v3/depth", params={"symbol": "BTCUSDT", "limit": 10})
+        r.raise_for_status()
         ob = r.json()
         return {
-            "bids": ob["bids"], # [[price, qty], ...]
-            "asks": ob["asks"]
+            "bids": ob.get("bids", []), # [[price, qty], ...]
+            "asks": ob.get("asks", [])
         }
     except Exception:
         return {"bids": [], "asks": []}
 
-# AI анализ BTC с реальными данными Binance (цена, объём, стакан) + свежие новости
-def analyze_btc(price, orderbook, news):
+### --- AI-анализ BTCUSDT (1 сигнал) --- ###
+def analyze_btc_signal(price, orderbook, news):
     prompt = f"""
-Текущая цена BTC/USDT на Binance: {price.get("price", "n/a")}
-24h объём: {price.get("volume", "n/a")}
-24h изменение: {price.get("change", "n/a")}
-24h high/low: {price.get("high", "n/a")} / {price.get("low", "n/a")}
-Топ-10 BID стакана: {orderbook.get("bids", [])}
-Топ-10 ASK стакана: {orderbook.get("asks", [])}
-Свежие важные новости: {json.dumps(news, ensure_ascii=False)}
+Анализируй BTC/USDT на Binance:
+- Текущая цена: {price.get("price", "n/a")}
+- 24h объем: {price.get("volume", "n/a")}
+- 24h изменение: {price.get("change", "n/a")}
+- 24h High/Low: {price.get("high", "n/a")} / {price.get("low", "n/a")}
+- Стакан BID (10): {orderbook.get("bids", [])}
+- Стакан ASK (10): {orderbook.get("asks", [])}
+- Важные новости: {json.dumps(news, ensure_ascii=False)}
 
-Дай короткий, профессиональный трейдинг-анализ (TradingView style): учти цену, объём, дисбаланс стаканов, крупные лимитки, движения объёма и новостной фон. 
-Выдай только по BTC, 15-минутный сигнал: 
-BTC [LONG/SHORT] | Вход: [price] TP: [price] SL: [price]
-Комментарий: (1-2 предложения, реально про цену и рынок, не воду!)
-"""
-    client = openai.OpenAI(api_key=OPENAI_API_KEY)
-    response = client.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "Ты опытный AI трейдер. Даёшь только точные сигналы и краткие комментарии, обязательно анализируешь стакан."},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.15,
-        max_tokens=350
-    )
-    return response.choices[0].message.content
+Дай кратко по TradingView-стилю:
+BTC [LONG/SHORT] | Вход: [цена] TP: [цена] SL: [цена]
+Комментарий: (1-2 предложения, четко по рынку! Только BTC!)
+    """.strip()
+    try:
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "Ты профи-трейдер и даёшь только BTC сигналы и очень краткие комментарии, анализируешь стакан и объём."},
+                {"role": "user", "content": prompt}
+            ],
+            temperature=0.13,
+            max_tokens=320
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        return f"Ошибка AI анализа: {str(e)}"
 
-@app.route('/api/stream', methods=['GET'])
-def api_stream():
-    news = get_cryptopanic_news(limit=1)
+### --- API: Получить актуальный BTC сигнал --- ###
+@app.route('/api/signal', methods=['GET'])
+def api_signal():
     price = get_btc_binance()
     orderbook = get_btc_orderbook()
-    ai_signal = analyze_btc(price, orderbook, news)
+    news = get_cryptopanic_news(limit=2)
+    signal = analyze_btc_signal(price, orderbook, news)
     return jsonify({
-        "news": news,
-        "signal": ai_signal
+        "signal": signal,
+        "price": price,
+        "orderbook": orderbook,
+        "news": news
     })
 
+### --- API: Только Binance --- ###
+@app.route('/api/binance', methods=['GET'])
+def api_binance():
+    return jsonify(get_btc_binance())
+
+### --- API: Только стакан --- ###
+@app.route('/api/orderbook', methods=['GET'])
+def api_orderbook():
+    return jsonify(get_btc_orderbook())
+
+### --- API: Только новости --- ###
 @app.route('/api/news', methods=['GET'])
 def api_news():
     return jsonify(get_cryptopanic_news(limit=8))
 
+### --- Healthcheck --- ###
 @app.route('/')
 def healthcheck():
     return 'CryptoAI server running!'
