@@ -9,7 +9,6 @@ import openai
 app = Flask(__name__)
 CORS(app)
 
-# Все ключи теперь только из переменных окружения!
 BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "")
 CRYPTOPANIC_API_KEY = os.environ.get("CRYPTOPANIC_API_KEY", "")
 COINMARKETCAP_API_KEY = os.environ.get("COINMARKETCAP_API_KEY", "")
