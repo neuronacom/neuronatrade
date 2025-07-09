@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
   <title>NEURONA Trade AI Bot</title>
-  <link rel="manifest" href="/manifest.json">
+  <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#fff">
   <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
   <style>
@@ -34,11 +34,14 @@
       font-weight: 500; margin-top: 2px; margin-left: 2px; letter-spacing: .04em;
     }
     .refresh-btn {
-      margin-left: auto; margin-right: 18px; background: none; border: none;
+      margin-left: auto; margin-right: 16px; background: none; border: none;
       outline: none; cursor: pointer; display: flex; align-items: center;
-      padding: 8px;
+      padding: 7px; border-radius: 50%;
+      box-shadow: 0 1.5px 7px #0001;
+      transition: background .15s;
     }
-    .refresh-btn svg { width: 27px; height: 27px; stroke: #181818; }
+    .refresh-btn svg { width: 32px; height: 32px; stroke: #181818; }
+    .refresh-btn:hover { background: #eee; }
     #app {
       width: 100vw; height: 100vh; display: flex; flex-direction: column;
       align-items: center; justify-content: center;
@@ -78,7 +81,6 @@
       display: flex; align-items: flex-end;
       padding-bottom: 10px;
     }
-    /* --- dots animation --- */
     .typing-dots {
       display: inline-flex; gap: 2.7px; vertical-align: middle; align-items: flex-end;
     }
@@ -112,7 +114,10 @@
       <span class="top-sub">Trade AI Bot</span>
     </span>
     <button class="refresh-btn" id="refreshBtn" title="Обновить">
-      <svg viewBox="0 0 24 24" fill="none"><path d="M4 17.5A9 9 0 1021 12" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 6v6h-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.7">
+        <path d="M4 17.5A9 9 0 1021 12" stroke="#181818" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21 6v6h-6" stroke="#181818" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
     </button>
   </div>
   <div id="app">
@@ -126,7 +131,6 @@
     const refreshBtn = document.getElementById('refreshBtn');
     let autoRefresh = null;
 
-    // --- Показ анимации "думает" ---
     function showTyping() {
       const d = document.createElement('div');
       d.className = 'message typing';
@@ -140,11 +144,9 @@
       return d;
     }
 
-    // --- Показываем сигнал (с выделением цвета для LONG/SHORT) ---
     function addMessage(txt, className = "") {
       const msg = document.createElement('div');
       msg.className = 'message' + (className ? ' ' + className : '');
-      // выделение: LONG — зелёный, SHORT — красный
       if (/long/i.test(txt)) msg.classList.add('long');
       if (/short/i.test(txt)) msg.classList.add('short');
       msg.innerHTML = txt;
@@ -156,15 +158,13 @@
       messagesEl.scrollTo({top: messagesEl.scrollHeight, behavior: 'smooth'});
     }
 
-    // --- Запрос на сервер (все данные сразу) ---
     async function fetchAll() {
       messagesEl.innerHTML = '';
       const typing = showTyping();
       try {
-        // Твой backend на Heroku: должен вернуть массив {type: 'signal'|'news'|'info', text: ''}
-        // Сигналы типа:
-        // [{type:'signal',text:'BTC/USDT LONG ...'}, {type:'signal',text:'BTC/USDT SHORT ...'}, {type:'news',text:'новость...'}, ...]
-        const r = await fetch('https://tradeneurona.herokuapp.com/api/feed');
+        // -- Подставь свой heroku backend сюда (НОВЫЙ URL!)
+        const BACKEND = 'https://tradeneurona-7da73bd0c5bb.herokuapp.com/api/feed';
+        const r = await fetch(BACKEND, {mode:'cors'});
         const json = await r.json();
         if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
         (json.messages || []).forEach(obj => {
@@ -178,25 +178,20 @@
       }
     }
 
-    // Кнопка "обновить"
     refreshBtn.onclick = fetchAll;
 
-    // Автообновление раз в 1-2 мин
     function startAuto(){
       if (autoRefresh) clearInterval(autoRefresh);
       autoRefresh = setInterval(fetchAll, 70000);
     }
 
-    // Сразу после загрузки — грузим сообщения
     window.onload = () => { fetchAll(); startAuto(); };
 
-    // --- Запрос пуш-уведомлений при первом входе ---
     if ('Notification' in window && Notification.permission !== "granted") {
       Notification.requestPermission();
     }
-    // PWA SW
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
+      navigator.serviceWorker.register('./sw.js');
     }
   </script>
 </body>
