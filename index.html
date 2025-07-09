@@ -8,102 +8,29 @@
   <meta name="theme-color" content="#fff">
   <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
   <style>
-    html, body {
-      background: #fff;
-      color: #000;
-      width: 100vw; height: 100vh; margin: 0; padding: 0;
-      font-family: Arial, 'Segoe UI', sans-serif;
-      overflow: hidden;
-    }
-    .top-bar {
-      position: fixed; top: 0; left: 0; width: 100vw; height: 54px;
-      display: flex; align-items: center; justify-content: flex-start;
-      background: #fff; z-index: 11; box-shadow: 0 2px 16px #0001;
-    }
-    .top-logo {
-      width: 35px; height: 35px; margin: 0 13px 0 16px; border-radius: 8px;
-      background: #fff;
-    }
-    .top-title {
-      font-size: 1.52rem; letter-spacing: .11em; font-weight: bold;
-      color: #111; user-select: none; line-height: 1;
-      text-transform: uppercase;
-    }
-    .top-sub {
-      font-size: 0.84em; color: #555; display: block; line-height: 1.0;
-      font-weight: 500; margin-top: 2px; margin-left: 2px; letter-spacing: .04em;
-    }
-    .refresh-btn {
-      margin-left: auto; margin-right: 16px; background: none; border: none;
-      outline: none; cursor: pointer; display: flex; align-items: center;
-      padding: 7px; border-radius: 50%;
-      box-shadow: 0 1.5px 7px #0001;
-      transition: background .15s;
-    }
+    html, body { background: #fff; color: #000; width: 100vw; height: 100vh; margin: 0; padding: 0; font-family: Arial, 'Segoe UI', sans-serif; overflow: hidden; }
+    .top-bar { position: fixed; top: 0; left: 0; width: 100vw; height: 54px; display: flex; align-items: center; justify-content: flex-start; background: #fff; z-index: 11; box-shadow: 0 2px 16px #0001; }
+    .top-logo { width: 35px; height: 35px; margin: 0 13px 0 16px; border-radius: 8px; background: #fff; }
+    .top-title { font-size: 1.52rem; letter-spacing: .11em; font-weight: bold; color: #111; user-select: none; line-height: 1; text-transform: uppercase; }
+    .top-sub { font-size: 0.84em; color: #555; display: block; line-height: 1.0; font-weight: 500; margin-top: 2px; margin-left: 2px; letter-spacing: .04em; }
+    .refresh-btn { margin-left: auto; margin-right: 16px; background: none; border: none; outline: none; cursor: pointer; display: flex; align-items: center; padding: 7px; border-radius: 50%; box-shadow: 0 1.5px 7px #0001; transition: background .15s; }
     .refresh-btn svg { width: 32px; height: 32px; stroke: #181818; }
     .refresh-btn:hover { background: #eee; }
-    #app {
-      width: 100vw; height: 100vh; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      background: none; margin-top: 54px;
-    }
-    .chat-container {
-      width: 100%; max-width: 370px; min-width: 220px; height: 75vh;
-      margin: 0 auto; margin-top: 44px;
-      background: rgba(255,255,255,0.97);
-      border-radius: 16px; box-shadow: 0 8px 32px #0001, 0 2px 7px #0002;
-      border: 1.5px solid #e1e1e1;
-      display: flex; flex-direction: column; overflow: hidden;
-      position: relative;
-    }
-    #messages {
-      flex: 1; overflow-y: auto; padding: 18px 13px 10px 13px; box-sizing: border-box;
-      display: flex; flex-direction: column; gap: 10px;
-      scroll-behavior: smooth;
-    }
-    .message {
-      background: #e6eaf7; color: #222;
-      padding: 12px 14px;
-      border-radius: 12px 14px 14px 4px;
-      max-width: 85%; min-width: 70px;
-      box-shadow: 0 1.2px 4px #bbb2;
-      font-size: 1rem; line-height: 1.54;
-      align-self: flex-start; position: relative;
-      word-break: break-word;
-      border: 1px solid #dde1ed;
-    }
+    #app { width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: none; margin-top: 54px; }
+    .chat-container { width: 100%; max-width: 370px; min-width: 220px; height: 75vh; margin: 0 auto; margin-top: 44px; background: rgba(255,255,255,0.97); border-radius: 16px; box-shadow: 0 8px 32px #0001, 0 2px 7px #0002; border: 1.5px solid #e1e1e1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+    #messages { flex: 1; overflow-y: auto; padding: 18px 13px 10px 13px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px; scroll-behavior: smooth; }
+    .message { background: #e6eaf7; color: #222; padding: 12px 14px; border-radius: 12px 14px 14px 4px; max-width: 85%; min-width: 70px; box-shadow: 0 1.2px 4px #bbb2; font-size: 1rem; line-height: 1.54; align-self: flex-start; position: relative; word-break: break-word; border: 1px solid #dde1ed; }
     .message.long { background: #e6fbe6; color: #116610; border-color: #bcf3c6; font-weight: bold;}
     .message.short { background: #fbe6e6; color: #bb191b; border-color: #f4bbbb; font-weight: bold;}
-    .message.typing {
-      font-style: italic; color: #666;
-      background: #f4f4f4;
-      min-width: 55px;
-      display: flex; align-items: flex-end;
-      padding-bottom: 10px;
-    }
-    .typing-dots {
-      display: inline-flex; gap: 2.7px; vertical-align: middle; align-items: flex-end;
-    }
-    .tdot {
-      display: inline-block; width: 7px; height: 7px; background: #bbb;
-      border-radius: 50%; opacity: .7; animation: tdotbounce 1.1s infinite; margin-right: 2px;
-    }
+    .message.news { background: #fffbe8; color: #b38000; border-color: #ffeebb; }
+    .message.typing { font-style: italic; color: #666; background: #f4f4f4; min-width: 55px; display: flex; align-items: flex-end; padding-bottom: 10px; }
+    .typing-dots { display: inline-flex; gap: 2.7px; vertical-align: middle; align-items: flex-end; }
+    .tdot { display: inline-block; width: 7px; height: 7px; background: #bbb; border-radius: 50%; opacity: .7; animation: tdotbounce 1.1s infinite; margin-right: 2px; }
     .tdot1 { animation-delay: 0s;}
     .tdot2 { animation-delay: 0.15s;}
     .tdot3 { animation-delay: 0.33s;}
-    @keyframes tdotbounce {
-      0%,80%,100% { transform: translateY(0); opacity: .66; }
-      35% { transform: translateY(-7px); opacity: 1;}
-      50% { opacity: 1;}
-    }
-    @media(max-width:650px){
-      .chat-container { max-width: 99vw; min-width: 0; }
-      #messages { padding: 11px 6px 7px 6px;}
-      .top-bar { height: 44px; }
-      .top-logo { width: 23px; height: 23px; margin: 0 7px 0 7px;}
-      .top-title { font-size: 1.02rem;}
-      .top-sub { font-size: 0.74em; }
-    }
+    @keyframes tdotbounce { 0%,80%,100% { transform: translateY(0); opacity: .66; } 35% { transform: translateY(-7px); opacity: 1;} 50% { opacity: 1;} }
+    @media(max-width:650px){ .chat-container { max-width: 99vw; min-width: 0; } #messages { padding: 11px 6px 7px 6px;} .top-bar { height: 44px; } .top-logo { width: 23px; height: 23px; margin: 0 7px 0 7px;} .top-title { font-size: 1.02rem;} .top-sub { font-size: 0.74em; } }
   </style>
 </head>
 <body>
@@ -126,7 +53,15 @@
     </div>
   </div>
   <script>
-    // --- CORE: Диалог автообновление, точки, сообщения --- //
+    // --- PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js');
+    }
+    // --- NOTIFICATION
+    if ('Notification' in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+    // --- CORE: Автообновление, точки, сообщения ---
     const messagesEl = document.getElementById('messages');
     const refreshBtn = document.getElementById('refreshBtn');
     let autoRefresh = null;
@@ -149,6 +84,7 @@
       msg.className = 'message' + (className ? ' ' + className : '');
       if (/long/i.test(txt)) msg.classList.add('long');
       if (/short/i.test(txt)) msg.classList.add('short');
+      if (/news/i.test(className)) msg.classList.add('news');
       msg.innerHTML = txt;
       messagesEl.appendChild(msg);
       scrollToBottom();
@@ -158,41 +94,81 @@
       messagesEl.scrollTo({top: messagesEl.scrollHeight, behavior: 'smooth'});
     }
 
-    async function fetchAll() {
-      messagesEl.innerHTML = '';
-      const typing = showTyping();
+    // --- Публичные API: Binance + CoinGecko + CryptoPanic (новости)
+    async function fetchBinance() {
+      // https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT
+      // https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=20
+      let price = 0, volume = 0, signal = '', buyVol = 0, sellVol = 0, change = 0, result = '';
       try {
-        // -- Подставь свой heroku backend сюда (НОВЫЙ URL!)
-        const BACKEND = 'https://tradeneurona-7da73bd0c5bb.herokuapp.com/api/feed';
-        const r = await fetch(BACKEND, {mode:'cors'});
-        const json = await r.json();
-        if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
-        (json.messages || []).forEach(obj => {
-          if (obj.type === 'signal') addMessage(obj.text);
-          else if (obj.type === 'news') addMessage(obj.text);
-          else addMessage(obj.text, '');
-        });
+        const ticker = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT').then(r=>r.json());
+        price = parseFloat(ticker.lastPrice);
+        volume = parseFloat(ticker.volume);
+        change = parseFloat(ticker.priceChangePercent);
+        // стаканы для расчёта
+        const depth = await fetch('https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=20').then(r=>r.json());
+        buyVol = depth.bids.slice(0,7).reduce((s,b)=>s+parseFloat(b[1]),0);
+        sellVol = depth.asks.slice(0,7).reduce((s,b)=>s+parseFloat(b[1]),0);
+        let volRatio = buyVol/(sellVol+0.01);
+        if (volRatio > 1.15 && change > 0.1) {
+          signal = `<b style="color:#00a800">BTC/USDT LONG</b> — Объём покупок превышает продажи<br>Вход: <b>${price.toLocaleString()}</b> | 24ч: <b>${change.toFixed(2)}%</b>`;
+        } else if (volRatio < 0.88 && change < -0.1) {
+          signal = `<b style="color:#d70000">BTC/USDT SHORT</b> — Объём продаж превышает покупки<br>Вход: <b>${price.toLocaleString()}</b> | 24ч: <b>${change.toFixed(2)}%</b>`;
+        } else {
+          signal = `<b>BTC/USDT</b> — Нет явного сигнала<br>Вход: <b>${price.toLocaleString()}</b> | 24ч: <b>${change.toFixed(2)}%</b>`;
+        }
+        result += signal;
+        result += `<br><small>Объём покупок: ${buyVol.toFixed(2)}, объём продаж: ${sellVol.toFixed(2)}<br>Суммарный 24ч объём: ${volume.toLocaleString()} BTC</small>`;
       } catch(e){
-        if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
-        addMessage("Ошибка загрузки данных с сервера.", "");
+        result = "<b>Ошибка получения данных Binance!</b>";
+      }
+      return result;
+    }
+
+    async function fetchCoinGecko() {
+      try {
+        const cg = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,eur&include_24hr_change=true').then(r=>r.json());
+        const p = cg.bitcoin.usd;
+        const ch = cg.bitcoin.usd_24h_change;
+        return `<b>CoinGecko BTC:</b> <b>${p}$</b> (${ch>=0?'<span style="color:green">+'+ch.toFixed(2)+'%</span>':'<span style="color:red">'+ch.toFixed(2)+'%</span>'})`;
+      } catch {
+        return '';
       }
     }
 
+    async function fetchCryptoPanic() {
+      try {
+        // Прокси, иначе CORS — https://cryptopanic.com/api/v1/posts/?auth_token=2cd2ebe38c9af9d7b50c0c0b9a5d0213e6798ccd&currencies=BTC&public=true
+        const url = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://cryptopanic.com/api/v1/posts/?auth_token=2cd2ebe38c9af9d7b50c0c0b9a5d0213e6798ccd&currencies=BTC&public=true');
+        const r = await fetch(url).then(x=>x.json());
+        if (!r.results) return "";
+        let out = '<b>📰 Новости BTC</b><ul>';
+        r.results.slice(0,4).forEach(n=>{
+          out += `<li><a href="${n.url}" target="_blank">${n.title}</a></li>`;
+        });
+        out += '</ul>';
+        return out;
+      } catch {
+        return "<b>Ошибка загрузки новостей CryptoPanic</b>";
+      }
+    }
+
+    async function fetchAll() {
+      messagesEl.innerHTML = '';
+      const typing = showTyping();
+      let [binance, cg, news] = await Promise.all([
+        fetchBinance(),
+        fetchCoinGecko(),
+        fetchCryptoPanic()
+      ]);
+      if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
+      addMessage(binance, (binance.includes('LONG') ? 'long' : binance.includes('SHORT') ? 'short' : ''));
+      addMessage(cg, '');
+      addMessage(news, 'news');
+    }
+
     refreshBtn.onclick = fetchAll;
-
-    function startAuto(){
-      if (autoRefresh) clearInterval(autoRefresh);
-      autoRefresh = setInterval(fetchAll, 70000);
-    }
-
+    function startAuto(){ if (autoRefresh) clearInterval(autoRefresh); autoRefresh = setInterval(fetchAll, 70000);}
     window.onload = () => { fetchAll(); startAuto(); };
-
-    if ('Notification' in window && Notification.permission !== "granted") {
-      Notification.requestPermission();
-    }
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js');
-    }
   </script>
 </body>
 </html>
