@@ -28,7 +28,7 @@
   <div class="container">
     <header>
       <h1>NEURONA TRADE — BTC</h1>
-      <div style="color:#aaa;font-size:1em;margin-bottom:12px">AI Bitcoin сигнал + новости CryptoPanic</div>
+      <div style="color:#aaa;font-size:1em;margin-bottom:12px">AI Bitcoin сигнал + новости CryptoPanic + Binance стаканы</div>
     </header>
     <main>
       <div class="dialogue" id="dialogue"></div>
@@ -70,7 +70,6 @@
       if (!signal) return;
       if (signal === lastSignal) return;
       lastSignal = signal;
-      // Подсвечиваем LONG и SHORT
       let html = signal
         .replace(/BTC\s+LONG/gi, '<span class="trade long">BTC LONG</span>')
         .replace(/BTC\s+SHORT/gi, '<span class="trade short">BTC SHORT</span>')
@@ -93,7 +92,7 @@
 
     document.getElementById('reloadBtn').onclick = fetchAndShow;
     fetchAndShow();
-    setInterval(fetchAndShow, 45000); // автообновление раз в 45 сек
+    setInterval(fetchAndShow, 45000);
   </script>
 </body>
 </html>
