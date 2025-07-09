@@ -13,12 +13,13 @@ CRYPTOPANIC_API_KEY = os.environ.get("CRYPTOPANIC_API_KEY", "")
 COINMARKETCAP_API_KEY = os.environ.get("COINMARKETCAP_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
-def get_cryptopanic_news():
+# Get fresh CryptoPanic news
+def get_cryptopanic_news(limit=3):
     url = f"https://cryptopanic.com/api/v1/posts/?auth_token={CRYPTOPANIC_API_KEY}&filter=important"
     r = requests.get(url)
     news = []
     if r.ok:
-        for n in r.json().get("results", []):
+        for n in r.json().get("results", [])[:limit]:
             dt = n.get("published_at", "")
             title = n.get("title", "")
             link = n.get("url", "")
@@ -29,6 +30,7 @@ def get_cryptopanic_news():
             })
     return news
 
+# Latest prices
 def get_coinmarketcap_prices():
     url = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest"
     params = {"symbol": "BTC,ETH,BNB,SOL,XRP"}
@@ -36,62 +38,63 @@ def get_coinmarketcap_prices():
     r = requests.get(url, headers=headers, params=params)
     return r.json()
 
-def get_binance_order_book(symbol="BTCUSDT", limit=50):
+# Orderbook snapshot (top 10 bids/asks)
+def get_binance_order_book(symbol="BTCUSDT", limit=10):
     url = f"https://api.binance.com/api/v3/depth"
     params = {"symbol": symbol, "limit": limit}
     r = requests.get(url, params=params)
-    return r.json()
+    return r.json() if r.ok else {}
 
+# Compose AI prompt with **orderbook and volumes**
 def analyze_market_and_generate_signals(prices, order_books, news, timeframe):
-    prompt = f"""
-    Тебе даются свежие цены с CoinMarketCap: {json.dumps(prices)}.
-    Актуальные стаканы Binance: {json.dumps(order_books)}.
-    Последние важные новости: {json.dumps(news[:3], ensure_ascii=False)}.
-    Дай свой AI-комментарий, укажи общий тренд, и ДАЙ СИГНАЛЫ (LONG/SHORT + где вход и выход) для BTC, ETH, BNB, SOL, XRP на {timeframe} графике.
-    Сигналы должны быть в формате:
-    [COIN] [LONG/SHORT] | Вход: [уровень], TP: [уровень], SL: [уровень]
-    """
+    prompt = f"""Тебе даны:
+- Свежие цены CoinMarketCap: {json.dumps(prices)}
+- Binance стаканы (топ 10 заявок по каждому активу): {json.dumps(order_books)}
+- Последние 3 важные новости: {json.dumps(news, ensure_ascii=False)}
+    
+Детально проанализируй объёмы в стаканах (ищи дисбаланс, плотности, спуфинг), дай прогноз движения и СИГНАЛЫ на {timeframe} по BTC, ETH, BNB, SOL, XRP.
+
+Для каждой монеты: 
+- Укажи направление (LONG/SHORT), цену входа, TP, SL
+- По стаканам выдели явные точки входа, если видно
+- Кратко прокомментируй ситуацию по рынку
+
+Сообщения пиши компактно и понятно.
+
+Формат:
+[coin] [LONG/SHORT] | Вход: [price] TP: [price] SL: [price]
+Комментарий: ..."""
 
     client = openai.OpenAI(api_key=OPENAI_API_KEY)
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
-            {"role": "system", "content": "Ты опытный AI-трейдер, эксперт по фьючерсам, всегда четко и кратко даешь рекомендации и рыночные обзоры на русском."},
+            {"role": "system", "content": "Ты профессиональный AI-криптотрейдер, очень кратко и понятно освещаешь рынок и даёшь сигналы, не повторяй новости."},
             {"role": "user", "content": prompt}
         ],
-        temperature=0.4,
-        max_tokens=900
+        temperature=0.25,
+        max_tokens=800
     )
     return response.choices[0].message.content
 
+# ---- API ----
+
+@app.route('/api/stream', methods=['GET'])
+def api_stream():
+    # Отдаем последние 1-2 новости и один свежий сигнал (чередуем)
+    timeframe = request.args.get("tf", "15m")
+    news = get_cryptopanic_news(limit=1)
+    prices = get_coinmarketcap_prices()
+    order_books = {p: get_binance_order_book(p) for p in ["BTCUSDT","ETHUSDT","BNBUSDT","SOLUSDT","XRPUSDT"]}
+    ai_signal = analyze_market_and_generate_signals(prices, order_books, news, timeframe)
+    return jsonify({
+        "news": news,
+        "signal": ai_signal
+    })
+
 @app.route('/api/news', methods=['GET'])
 def api_news():
-    news = get_cryptopanic_news()
-    return jsonify(news)
-
-@app.route('/api/prices', methods=['GET'])
-def api_prices():
-    prices = get_coinmarketcap_prices()
-    return jsonify(prices)
-
-@app.route('/api/orderbook', methods=['GET'])
-def api_orderbook():
-    pairs = ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"]
-    order_books = {}
-    for pair in pairs:
-        order_books[pair] = get_binance_order_book(pair)
-    return jsonify(order_books)
-
-@app.route('/api/analyze', methods=['GET'])
-def api_analyze():
-    timeframe = request.args.get("tf", "15m")
-    prices = get_coinmarketcap_prices()
-    order_books = {}
-    for pair in ["BTCUSDT", "ETHUSDT", "BNBUSDT", "SOLUSDT", "XRPUSDT"]:
-        order_books[pair] = get_binance_order_book(pair)
-    news = get_cryptopanic_news()
-    result = analyze_market_and_generate_signals(prices, order_books, news, timeframe)
-    return jsonify({"ai": result})
+    return jsonify(get_cryptopanic_news(limit=10))
 
 @app.route('/')
 def healthcheck():
