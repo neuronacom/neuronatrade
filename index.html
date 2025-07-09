@@ -1,173 +1,160 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
-  <title>NEURONA 1.0</title>
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#fff">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="NEURONA 1.0">
-  <link rel="apple-touch-icon" href="https://i.ibb.co/XfKRzvcy/27.png">
-  <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>NEURONA Trade AI</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <link rel="icon" href="https://i.ibb.co/XfKRzvcy/27.png" />
   <style>
-    html,body {
-      height:100%; margin:0; padding:0;
-      background:#fff; color:#000;
-      font-family: Arial, 'Segoe UI', sans-serif;
-      -webkit-font-smoothing:antialiased;
-    }
-    .top-bar {
-      position:fixed; top:0; left:0; width:100vw; height:58px;
-      display:flex; align-items:center;
-      background:#fff; z-index:100;
-      border-bottom:1px solid #ececec;
-      padding-left:18px;
-      box-sizing:border-box;
-    }
-    .top-logo { width:38px; height:38px; margin-right:12px;}
-    .top-title {
-      font-size:1.42rem;
-      font-weight:bold;
-      letter-spacing:.13em;
-      color:#000;
-      text-transform:uppercase;
-    }
-    .chat-container {
-      display:flex; flex-direction:column;
-      max-width:430px; width:100vw; margin:0 auto;
-      margin-top:76px; /* под шапку */
-      background: #fff; border-radius:18px;
-      box-shadow:0 2px 21px #0002;
-      border:1.5px solid #ececec;
-      min-height:540px; min-width:0;
-      height:72vh;
-      padding:0;
-    }
-    #messages {
-      flex:1; overflow-y:auto; padding:23px 14px 7px 18px;
-      font-size:1.04em; min-height:100px; max-height:62vh;
+    body {
+      margin: 0; padding: 0;
       background: #fff;
+      font-family: Arial, sans-serif;
+      color: #000;
     }
-    .message {
-      margin-bottom:17px; line-height:1.6;
-      word-break:break-word;
-      position:relative;
-      padding:10px 18px 10px 11px;
-      border-radius: 11px 11px 11px 0;
-      background: #f5f6f8;
-      color: #121212;
-      border:1px solid #e0e1e3;
-      box-shadow:0 1px 7px #0001;
-      max-width:96%;
-      transition:.2s;
+    #top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 18px;
+      background: #f5f5f5;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
-    .message.user { align-self:flex-end; background:#e8f2ff; color:#1469c4; border:1px solid #cfe1fa;}
-    .message.signal { background:#2b2b2b; color:#fff; border:1.2px solid #111;}
-    .message.news { background:#fff6f2; color:#a1340c; border:1.2px solid #ffd7c2;}
-    .msg-time { display:block; font-size:.85em; color:#888; opacity:.62; margin-top:2px;}
-    .input-area {
-      display:flex; border-top:1.4px solid #ececec;
-      background:#fff; padding:11px 8px 11px 14px;
-      align-items:flex-end;
-      min-height:62px;
+    #top-title {
+      display: flex;
+      flex-direction: column;
     }
-    #input {
-      flex:1; font-size:1.08em;
-      border:1.4px solid #e0e1e3; border-radius:7px;
-      padding:10px 13px; resize:none; min-height:44px; background:#fafbfc;
-      color:#191919;
-      transition:.15s;
-      outline:none;
+    #top-title h1 {
+      margin: 0;
+      font-size: 1.6rem;
+      letter-spacing: .1em;
+      font-weight: bold;
     }
-    #input:focus { border-color:#a4d8ff;}
-    #send {
-      margin-left:9px; min-width:84px; min-height:44px;
-      font-size:1.05em; border-radius:7px;
-      background:#101010; color:#fff;
-      border:none; font-weight:bold;
-      cursor:pointer; transition:.13s;
-      box-shadow:0 1.2px 6px #0002;
+    #top-title h2 {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #555;
     }
-    #send:active { background:#444;}
-    @media (max-width:600px){
-      .chat-container{ max-width:99vw; }
-      #messages { font-size:.99em; }
+    #refreshBtn {
+      background: none;
+      border: none;
+      font-size: 1.6rem;
+      cursor: pointer;
+      color: #000;
     }
-    @media (max-width:430px){
-      .top-bar {height:44px;}
-      .chat-container {margin-top:57px;}
+    #content {
+      padding: 14px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+    .msg {
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 1rem;
+      line-height: 1.5;
+      position: relative;
+    }
+    .msg.long {
+      background: #e7f9e7;
+      border: 1px solid #54c154;
+      color: #2a672a;
+    }
+    .msg.short {
+      background: #fde6e6;
+      border: 1px solid #e05858;
+      color: #a82828;
+    }
+    .msg.news {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+    }
+    .msg.typing {
+      font-style: italic;
+      color: #777;
+    }
+    .time {
+      font-size: 0.75rem;
+      color: #777;
+      margin-top: 4px;
+      display: block;
     }
   </style>
 </head>
 <body>
-  <div class="top-bar">
-    <img src="https://i.ibb.co/Mk4WpHL9/25-1.png" class="top-logo" alt="logo"/>
-    <span class="top-title">NEURONA</span>
+  <div id="top">
+    <div id="top-title">
+      <h1>NEURONA</h1>
+      <h2>Trade AI</h2>
+    </div>
+    <button id="refreshBtn" title="Обновить">&#x21bb;</button>
   </div>
-  <div class="chat-container">
-    <div id="messages"></div>
-    <form class="input-area" id="form" autocomplete="off">
-      <textarea id="input" placeholder="Ваш вопрос или 'новости BTC'..." required></textarea>
-      <button type="submit" id="send">Отправить</button>
-    </form>
-  </div>
+  <div id="content"></div>
+
   <script>
-    const BACKEND_URL = "https://tradeneurona-7da73bd0c5bb.herokuapp.com";
-    const messagesEl = document.getElementById('messages');
-    const input = document.getElementById('input');
-    const form = document.getElementById('form');
-    function addMsg(text, who='bot', type='', time='') {
-      const div = document.createElement('div');
-      div.className = 'message'+(who==='user'?' user':'')+(type?' '+type:'');
-      div.innerHTML = text;
-      if(time) div.innerHTML += `<span class="msg-time">${time}</span>`;
-      messagesEl.appendChild(div);
-      messagesEl.scrollTop = messagesEl.scrollHeight;
+    const content = document.getElementById("content");
+    const refreshBtn = document.getElementById("refreshBtn");
+
+    function addMsg(text, type) {
+      const div = document.createElement("div");
+      div.className = "msg " + type;
+      div.innerHTML = text + `<div class="time">${new Date().toLocaleTimeString().slice(0,5)}</div>`;
+      content.appendChild(div);
+      content.scrollTop = content.scrollHeight;
     }
-    async function getBTCSignalAndNews() {
-      // Получаем сигнал и новость
-      addMsg(`<span class="typing-dots">...</span>`, 'bot');
+
+    async function loadSignals() {
+      addMsg("⏳ Получаю сигнал...", "typing");
       try {
-        const res = await fetch(BACKEND_URL + "/api/stream");
+        const res = await fetch("/api/signals");
         const data = await res.json();
-        // убираем typing
-        messagesEl.removeChild(messagesEl.lastChild);
-        // новость
-        if(data.news && data.news.length){
-          const n = data.news[0];
-          let t = `<b>НОВОСТЬ:</b> <a href="${n.link}" target="_blank">${n.title}</a>`;
-          addMsg(t, 'bot', 'news', n.datetime?.slice(11,16)||'');
-        }
-        // сигнал
-        if(data.signal){
-          addMsg('<b>AI СИГНАЛ:</b><br>'+data.signal, 'bot', 'signal');
-        }
-      } catch(e) {
-        messagesEl.removeChild(messagesEl.lastChild);
-        addMsg('Ошибка соединения с сервером!', 'bot');
+        content.querySelector(".typing")?.remove();
+        if (data.long) addMsg("🟢 <b>LONG:</b> " + data.long, "long");
+        else if (data.short) addMsg("🔴 <b>SHORT:</b> " + data.short, "short");
+        else addMsg("Нет сигнала сейчас", "news");
+      } catch {
+        content.querySelector(".typing")?.remove();
+        addMsg("Ошибка получения сигнала", "short");
       }
     }
-    form.onsubmit = function(e){
-      e.preventDefault();
-      let txt = input.value.trim();
-      if(!txt) return;
-      addMsg(txt, 'user', '', new Date().toLocaleTimeString().slice(0,5));
-      input.value = '';
-      if(/новост|news|btc/i.test(txt)){
-        getBTCSignalAndNews();
-      }else{
-        addMsg('Пиши "новости BTC" чтобы получить точный AI-сигнал и свежие новости с Binance и CryptoPanic!', 'bot');
+
+    async function loadNews() {
+      try {
+        const res = await fetch("/api/news");
+        const news = await res.json();
+        news.slice(0, 3).forEach(n =>
+          addMsg(`📰 <b>${n.title}</b><br><a href="${n.url}" target="_blank">${n.url}</a>`, "news")
+        );
+      } catch {
+        addMsg("Не удалось загрузить новости", "news");
       }
     }
-    // PWA поддержка
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
+
+    async function updateAll() {
+      await loadSignals();
+      await loadNews();
     }
-    // Автозагрузка сигнала при открытии
-    window.addEventListener('DOMContentLoaded', getBTCSignalAndNews);
+
+    refreshBtn.onclick = updateAll;
+
+    // при старте
+    updateAll();
+    setInterval(updateAll, 60_000);
+
+    // PWA и пуш
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js");
+    }
+
+    Notification.requestPermission().then(res => {
+      if (res === "granted") {
+        console.log("🔔 Push разрешены");
+      }
+    });
   </script>
 </body>
 </html>
