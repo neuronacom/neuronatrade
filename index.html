@@ -1,160 +1,203 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>NEURONA Trade AI</title>
-  <link rel="manifest" href="/manifest.json" />
-  <meta name="theme-color" content="#ffffff" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <link rel="icon" href="https://i.ibb.co/XfKRzvcy/27.png" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>NEURONA Trade AI Bot</title>
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#fff">
+  <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
   <style>
-    body {
-      margin: 0; padding: 0;
+    html, body {
       background: #fff;
-      font-family: Arial, sans-serif;
       color: #000;
+      width: 100vw; height: 100vh; margin: 0; padding: 0;
+      font-family: Arial, 'Segoe UI', sans-serif;
+      overflow: hidden;
     }
-    #top {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 18px;
-      background: #f5f5f5;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    .top-bar {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 54px;
+      display: flex; align-items: center; justify-content: flex-start;
+      background: #fff; z-index: 11; box-shadow: 0 2px 16px #0001;
     }
-    #top-title {
-      display: flex;
-      flex-direction: column;
+    .top-logo {
+      width: 35px; height: 35px; margin: 0 13px 0 16px; border-radius: 8px;
+      background: #fff;
     }
-    #top-title h1 {
-      margin: 0;
-      font-size: 1.6rem;
-      letter-spacing: .1em;
-      font-weight: bold;
+    .top-title {
+      font-size: 1.52rem; letter-spacing: .11em; font-weight: bold;
+      color: #111; user-select: none; line-height: 1;
+      text-transform: uppercase;
     }
-    #top-title h2 {
-      margin: 0;
-      font-size: 0.9rem;
-      color: #555;
+    .top-sub {
+      font-size: 0.84em; color: #555; display: block; line-height: 1.0;
+      font-weight: 500; margin-top: 2px; margin-left: 2px; letter-spacing: .04em;
     }
-    #refreshBtn {
-      background: none;
-      border: none;
-      font-size: 1.6rem;
-      cursor: pointer;
-      color: #000;
+    .refresh-btn {
+      margin-left: auto; margin-right: 18px; background: none; border: none;
+      outline: none; cursor: pointer; display: flex; align-items: center;
+      padding: 8px;
     }
-    #content {
-      padding: 14px;
-      max-width: 420px;
-      margin: 0 auto;
+    .refresh-btn svg { width: 27px; height: 27px; stroke: #181818; }
+    #app {
+      width: 100vw; height: 100vh; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      background: none; margin-top: 54px;
     }
-    .msg {
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 12px;
-      font-size: 1rem;
-      line-height: 1.5;
+    .chat-container {
+      width: 100%; max-width: 370px; min-width: 220px; height: 75vh;
+      margin: 0 auto; margin-top: 44px;
+      background: rgba(255,255,255,0.97);
+      border-radius: 16px; box-shadow: 0 8px 32px #0001, 0 2px 7px #0002;
+      border: 1.5px solid #e1e1e1;
+      display: flex; flex-direction: column; overflow: hidden;
       position: relative;
     }
-    .msg.long {
-      background: #e7f9e7;
-      border: 1px solid #54c154;
-      color: #2a672a;
+    #messages {
+      flex: 1; overflow-y: auto; padding: 18px 13px 10px 13px; box-sizing: border-box;
+      display: flex; flex-direction: column; gap: 10px;
+      scroll-behavior: smooth;
     }
-    .msg.short {
-      background: #fde6e6;
-      border: 1px solid #e05858;
-      color: #a82828;
+    .message {
+      background: #e6eaf7; color: #222;
+      padding: 12px 14px;
+      border-radius: 12px 14px 14px 4px;
+      max-width: 85%; min-width: 70px;
+      box-shadow: 0 1.2px 4px #bbb2;
+      font-size: 1rem; line-height: 1.54;
+      align-self: flex-start; position: relative;
+      word-break: break-word;
+      border: 1px solid #dde1ed;
     }
-    .msg.news {
-      background: #f0f0f0;
-      border: 1px solid #ccc;
+    .message.long { background: #e6fbe6; color: #116610; border-color: #bcf3c6; font-weight: bold;}
+    .message.short { background: #fbe6e6; color: #bb191b; border-color: #f4bbbb; font-weight: bold;}
+    .message.typing {
+      font-style: italic; color: #666;
+      background: #f4f4f4;
+      min-width: 55px;
+      display: flex; align-items: flex-end;
+      padding-bottom: 10px;
     }
-    .msg.typing {
-      font-style: italic;
-      color: #777;
+    /* --- dots animation --- */
+    .typing-dots {
+      display: inline-flex; gap: 2.7px; vertical-align: middle; align-items: flex-end;
     }
-    .time {
-      font-size: 0.75rem;
-      color: #777;
-      margin-top: 4px;
-      display: block;
+    .tdot {
+      display: inline-block; width: 7px; height: 7px; background: #bbb;
+      border-radius: 50%; opacity: .7; animation: tdotbounce 1.1s infinite; margin-right: 2px;
+    }
+    .tdot1 { animation-delay: 0s;}
+    .tdot2 { animation-delay: 0.15s;}
+    .tdot3 { animation-delay: 0.33s;}
+    @keyframes tdotbounce {
+      0%,80%,100% { transform: translateY(0); opacity: .66; }
+      35% { transform: translateY(-7px); opacity: 1;}
+      50% { opacity: 1;}
+    }
+    @media(max-width:650px){
+      .chat-container { max-width: 99vw; min-width: 0; }
+      #messages { padding: 11px 6px 7px 6px;}
+      .top-bar { height: 44px; }
+      .top-logo { width: 23px; height: 23px; margin: 0 7px 0 7px;}
+      .top-title { font-size: 1.02rem;}
+      .top-sub { font-size: 0.74em; }
     }
   </style>
 </head>
 <body>
-  <div id="top">
-    <div id="top-title">
-      <h1>NEURONA</h1>
-      <h2>Trade AI</h2>
-    </div>
-    <button id="refreshBtn" title="Обновить">&#x21bb;</button>
+  <div class="top-bar">
+    <img src="https://i.ibb.co/Mk4WpHL9/25-1.png" class="top-logo" alt="logo"/>
+    <span>
+      <span class="top-title">NEURONA</span>
+      <span class="top-sub">Trade AI Bot</span>
+    </span>
+    <button class="refresh-btn" id="refreshBtn" title="Обновить">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 17.5A9 9 0 1021 12" stroke-linecap="round" stroke-linejoin="round"/><path d="M21 6v6h-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
-  <div id="content"></div>
-
+  <div id="app">
+    <div class="chat-container">
+      <div id="messages"></div>
+    </div>
+  </div>
   <script>
-    const content = document.getElementById("content");
-    const refreshBtn = document.getElementById("refreshBtn");
+    // --- CORE: Диалог автообновление, точки, сообщения --- //
+    const messagesEl = document.getElementById('messages');
+    const refreshBtn = document.getElementById('refreshBtn');
+    let autoRefresh = null;
 
-    function addMsg(text, type) {
-      const div = document.createElement("div");
-      div.className = "msg " + type;
-      div.innerHTML = text + `<div class="time">${new Date().toLocaleTimeString().slice(0,5)}</div>`;
-      content.appendChild(div);
-      content.scrollTop = content.scrollHeight;
+    // --- Показ анимации "думает" ---
+    function showTyping() {
+      const d = document.createElement('div');
+      d.className = 'message typing';
+      d.innerHTML = `<span class="typing-dots">
+        <span class="tdot tdot1"></span>
+        <span class="tdot tdot2"></span>
+        <span class="tdot tdot3"></span>
+      </span>`;
+      messagesEl.appendChild(d);
+      scrollToBottom();
+      return d;
     }
 
-    async function loadSignals() {
-      addMsg("⏳ Получаю сигнал...", "typing");
+    // --- Показываем сигнал (с выделением цвета для LONG/SHORT) ---
+    function addMessage(txt, className = "") {
+      const msg = document.createElement('div');
+      msg.className = 'message' + (className ? ' ' + className : '');
+      // выделение: LONG — зелёный, SHORT — красный
+      if (/long/i.test(txt)) msg.classList.add('long');
+      if (/short/i.test(txt)) msg.classList.add('short');
+      msg.innerHTML = txt;
+      messagesEl.appendChild(msg);
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      messagesEl.scrollTo({top: messagesEl.scrollHeight, behavior: 'smooth'});
+    }
+
+    // --- Запрос на сервер (все данные сразу) ---
+    async function fetchAll() {
+      messagesEl.innerHTML = '';
+      const typing = showTyping();
       try {
-        const res = await fetch("/api/signals");
-        const data = await res.json();
-        content.querySelector(".typing")?.remove();
-        if (data.long) addMsg("🟢 <b>LONG:</b> " + data.long, "long");
-        else if (data.short) addMsg("🔴 <b>SHORT:</b> " + data.short, "short");
-        else addMsg("Нет сигнала сейчас", "news");
-      } catch {
-        content.querySelector(".typing")?.remove();
-        addMsg("Ошибка получения сигнала", "short");
+        // Твой backend на Heroku: должен вернуть массив {type: 'signal'|'news'|'info', text: ''}
+        // Сигналы типа:
+        // [{type:'signal',text:'BTC/USDT LONG ...'}, {type:'signal',text:'BTC/USDT SHORT ...'}, {type:'news',text:'новость...'}, ...]
+        const r = await fetch('https://tradeneurona.herokuapp.com/api/feed');
+        const json = await r.json();
+        if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
+        (json.messages || []).forEach(obj => {
+          if (obj.type === 'signal') addMessage(obj.text);
+          else if (obj.type === 'news') addMessage(obj.text);
+          else addMessage(obj.text, '');
+        });
+      } catch(e){
+        if (typing && typing.parentNode) typing.parentNode.removeChild(typing);
+        addMessage("Ошибка загрузки данных с сервера.", "");
       }
     }
 
-    async function loadNews() {
-      try {
-        const res = await fetch("/api/news");
-        const news = await res.json();
-        news.slice(0, 3).forEach(n =>
-          addMsg(`📰 <b>${n.title}</b><br><a href="${n.url}" target="_blank">${n.url}</a>`, "news")
-        );
-      } catch {
-        addMsg("Не удалось загрузить новости", "news");
-      }
+    // Кнопка "обновить"
+    refreshBtn.onclick = fetchAll;
+
+    // Автообновление раз в 1-2 мин
+    function startAuto(){
+      if (autoRefresh) clearInterval(autoRefresh);
+      autoRefresh = setInterval(fetchAll, 70000);
     }
 
-    async function updateAll() {
-      await loadSignals();
-      await loadNews();
+    // Сразу после загрузки — грузим сообщения
+    window.onload = () => { fetchAll(); startAuto(); };
+
+    // --- Запрос пуш-уведомлений при первом входе ---
+    if ('Notification' in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
     }
-
-    refreshBtn.onclick = updateAll;
-
-    // при старте
-    updateAll();
-    setInterval(updateAll, 60_000);
-
-    // PWA и пуш
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js");
+    // PWA SW
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
     }
-
-    Notification.requestPermission().then(res => {
-      if (res === "granted") {
-        console.log("🔔 Push разрешены");
-      }
-    });
   </script>
 </body>
 </html>
