@@ -3,35 +3,37 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>NEURONA TRADE</title>
+  <title>NEURONA TRADE BTC</title>
   <style>
-    body { font-family: Arial, sans-serif; background: #0c0c0c; color: #fff; margin: 0; }
-    .container { max-width: 650px; margin: 0 auto; padding: 18px;}
-    header { text-align: center; margin-bottom: 16px;}
-    h1 { font-size: 2em; letter-spacing: 2px; color: #fff; }
-    main { background: #161616; border-radius: 13px; box-shadow: 0 2px 12px #0007; padding: 10px; }
-    .dialogue { min-height: 430px; max-height: 530px; overflow-y: auto; background: #111; border-radius: 8px; padding: 16px; }
-    .msg { margin: 0 0 20px 0; }
-    .msg-time { font-size: 0.85em; color: #777; margin-bottom: 3px;}
-    .msg-news { background: #181818; border-left: 3px solid #bbb; padding: 7px 14px; border-radius: 7px; }
-    .msg-news-title { font-weight: bold; color: #fafafa;}
-    .msg-news-link { color: #888; text-decoration: underline;}
-    .msg-signal { background: #141414; border-left: 3px solid #0ff; color: #0ff; font-weight: bold; padding: 7px 14px; border-radius: 7px; margin-top: 10px;}
-    .msg-signal b { color: #fff; }
-    footer { text-align: center; color: #bbb; margin: 25px 0 0; font-size: 0.95em; }
-    @media (max-width:700px){ .container {padding:4px;} .dialogue{padding:7px;} }
+    body { font-family: Arial,sans-serif; background: #0b0b0b; color: #fff; margin: 0; }
+    .container { max-width: 600px; margin: 0 auto; padding: 12px;}
+    header { text-align: center; margin-bottom: 12px;}
+    h1 { font-size: 1.7em; letter-spacing: 1px; color: #fff; }
+    .dialogue { min-height: 350px; max-height: 520px; overflow-y: auto; background: #141414; border-radius: 9px; padding: 14px;}
+    .msg { margin-bottom: 20px; }
+    .msg-time { font-size: 0.82em; color: #aaa; margin-bottom: 3px;}
+    .msg-news { background: #181818; border-left: 3px solid #555; padding: 7px 13px; border-radius: 6px;}
+    .msg-news-title { font-weight: bold; color: #fff;}
+    .msg-news-link { color: #777; text-decoration: underline;}
+    .msg-signal { background: #101010; border-left: 3px solid #fff; color: #fff; font-weight: bold; padding: 7px 13px; border-radius: 6px; margin-top: 10px;}
+    .msg-signal .trade { color: #fff; background: #000; padding:2px 7px; border-radius:4px;}
+    .msg-signal .short { color: #fff; background: #d00; padding:2px 7px; border-radius:4px;}
+    .msg-signal .long { color: #fff; background: #0c0; padding:2px 7px; border-radius:4px;}
+    footer { text-align: center; color: #aaa; margin: 22px 0 0; font-size: 0.97em;}
+    #reloadBtn {background:#fff;color:#111;border:none;padding:6px 16px;border-radius:6px;font-weight:bold;cursor:pointer;margin-top:10px}
+    @media (max-width:600px){ .container{padding:3px;} .dialogue{padding:7px;}}
   </style>
 </head>
 <body>
   <div class="container">
     <header>
-      <h1>NEURONA TRADE</h1>
-      <div style="color:#aaa;font-size:1em;margin-bottom:12px">AI сигналы и новости с CryptoPanic</div>
+      <h1>NEURONA TRADE — BTC</h1>
+      <div style="color:#aaa;font-size:1em;margin-bottom:12px">AI Bitcoin сигнал + новости CryptoPanic</div>
     </header>
     <main>
       <div class="dialogue" id="dialogue"></div>
-      <div style="text-align:right;margin-top:8px;">
-        <button id="reloadBtn" style="background:#fff;color:#111;border:none;padding:6px 18px;border-radius:6px;font-weight:bold;cursor:pointer">Обновить сейчас</button>
+      <div style="text-align:right;">
+        <button id="reloadBtn">Обновить сейчас</button>
       </div>
     </main>
     <footer>
@@ -47,13 +49,12 @@
     function formatDateTime(dt) {
       if (!dt) return "";
       const d = new Date(dt);
-      return d.toLocaleTimeString("ru-RU", {hour: '2-digit', minute: '2-digit', second: '2-digit'}) +
+      return d.toLocaleTimeString("ru-RU", {hour: '2-digit', minute: '2-digit'}) +
         " " + d.toLocaleDateString("ru-RU", {day:'2-digit', month:'2-digit'});
     }
 
     function addNews(news) {
       if (!news || !news.title) return;
-      // Проверка, не выводили ли мы это уже
       if (news.link === lastNewsLink) return;
       lastNewsLink = news.link;
       const div = document.createElement('div');
@@ -69,16 +70,21 @@
       if (!signal) return;
       if (signal === lastSignal) return;
       lastSignal = signal;
+      // Подсвечиваем LONG и SHORT
+      let html = signal
+        .replace(/BTC\s+LONG/gi, '<span class="trade long">BTC LONG</span>')
+        .replace(/BTC\s+SHORT/gi, '<span class="trade short">BTC SHORT</span>')
+        .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
       const div = document.createElement('div');
       div.className = "msg msg-signal";
-      div.innerHTML = signal.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
+      div.innerHTML = html;
       dialogue.appendChild(div);
       dialogue.scrollTop = dialogue.scrollHeight;
     }
 
     async function fetchAndShow() {
       try {
-        const res = await fetch(`${BACKEND_URL}/api/stream?tf=15m`);
+        const res = await fetch(`${BACKEND_URL}/api/stream`);
         const data = await res.json();
         if (data.news && data.news.length) addNews(data.news[0]);
         if (data.signal) addSignal(data.signal);
@@ -86,12 +92,8 @@
     }
 
     document.getElementById('reloadBtn').onclick = fetchAndShow;
-
-    // При запуске показать 1 новость и 1 сигнал
     fetchAndShow();
-
-    // Дальше – каждые 40 секунд подгружать новую новость и сигнал
-    setInterval(fetchAndShow, 40000);
+    setInterval(fetchAndShow, 45000); // автообновление раз в 45 сек
   </script>
 </body>
 </html>
