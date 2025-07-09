@@ -1,37 +1,25 @@
-const CACHE_NAME = 'neurona-pwa-v1';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  'https://i.ibb.co/XfKRzvcy/27.png',
-  'https://i.ibb.co/Mk4WpHL9/25-1.png'
-];
-
-self.addEventListener('install', function(e) {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(urlsToCache);
-    })
-  );
+self.addEventListener("install", function(e) {
+  self.skipWaiting();
 });
-
-self.addEventListener('activate', function(e) {
-  e.waitUntil(
-    caches.keys().then(function(keyList) {
-      return Promise.all(keyList.map(function(key) {
-        if (key !== CACHE_NAME) {
-          return caches.delete(key);
-        }
-      }));
-    })
-  );
+self.addEventListener("activate", function(e) {
+  e.waitUntil(self.clients.claim());
 });
-
-self.addEventListener('fetch', function(e) {
-  e.respondWith(
-    caches.match(e.request)
-      .then(function(response) {
-        return response || fetch(e.request);
-      })
-  );
+self.addEventListener("fetch", function(e) {
+  e.respondWith(fetch(e.request));
+});
+self.addEventListener("push", function(event) {
+  const data = event.data.json();
+  const title = data.title || "NEURONA Update";
+  const options = {
+    body: data.body || "Новое обновление доступно!",
+    icon: "https://i.ibb.co/XfKRzvcy/27.png",
+    badge: "https://i.ibb.co/XfKRzvcy/27.png",
+    data: { url: data.url || "/" }
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+self.addEventListener("notificationclick", function(event) {
+  event.notification.close();
+  if (event.notification.data && event.notification.data.url)
+    clients.openWindow(event.notification.data.url);
 });
