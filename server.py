@@ -14,15 +14,12 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 openai.api_key = OPENAI_API_KEY
 
-# ====== DEBUG VERSION WITH PRINTS ======
 def get_binance_btc_data():
     try:
         base_url = "https://api.binance.com"
-        # Стакан (без ключа!)
         depth_resp = requests.get(f"{base_url}/api/v3/depth?symbol=BTCUSDT&limit=10")
         print("Binance DEPTH:", depth_resp.text, flush=True)
         depth = depth_resp.json()
-        # 24hr ticker
         ticker_resp = requests.get(f"{base_url}/api/v3/ticker/24hr?symbol=BTCUSDT")
         print("Binance TICKER:", ticker_resp.text, flush=True)
         ticker = ticker_resp.json()
@@ -43,7 +40,14 @@ def get_cryptopanic_news():
         resp = requests.get(url)
         print("CryptoPanic RESP:", resp.text, flush=True)
         news = resp.json()
-        return [{"title": n['title'], "url": n['url'], "published_at": n["published_at"]} for n in news.get('results', [])[:3]]
+        result = []
+        for n in news.get('results', [])[:10]:
+            result.append({
+                "title": n.get('title', ''),
+                "url": n.get('url', n.get('source', {}).get('url', '#')),
+                "published_at": n.get("published_at", '')
+            })
+        return result
     except Exception as e:
         print("CryptoPanic ERROR:", e, flush=True)
         return []
