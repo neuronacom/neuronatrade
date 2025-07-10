@@ -1,4 +1,4 @@
-const CACHE_NAME = 'neurona-trade-v2';
+const CACHE_NAME = 'neurona-trade-v3';
 const urlsToCache = [
   '/',
   '/manifest.json'
