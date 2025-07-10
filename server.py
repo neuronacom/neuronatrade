@@ -13,7 +13,8 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 openai.api_key = OPENAI_API_KEY
 
 NEWS_API_KEYS = {
-    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4"
+    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4", # твой ключ
+    # можешь добавить свои другие api-ключи
 }
 
 CACHE = {"signals": [], "news": [], "last_ts": 0}
