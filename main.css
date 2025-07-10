@@ -1,166 +1,103 @@
 html, body {
-  width: 100vw; height: 100vh;
-  margin: 0; padding: 0;
-  box-sizing: border-box;
+  height: 100%; margin: 0; padding: 0;
   font-family: 'Segoe UI', Arial, sans-serif;
   background: #fff;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 #bg {
-  position: fixed;
-  z-index: 0;
-  left: 0; top: 0;
-  width: 100vw; height: 100vh;
+  position: fixed; z-index: 0; left: 0; top: 0; width: 100vw; height: 100vh;
+  background: #fff;
 }
 header {
-  width: 100vw;
-  height: 70px;
-  background: #fff;
-  z-index: 10;
-  box-shadow: 0 1px 12px 0 #eee;
-  display: flex;
-  align-items: center;
+  width: 100%; background: #fff; z-index: 10;
+  box-shadow: 0 1px 16px #eee;
+  position: sticky; top: 0; left: 0;
 }
 .logo-bar {
-  display: flex;
-  align-items: center;
-  padding-left: 22px;
-  gap: 20px;
-  width: 100%;
+  display: flex; align-items: center; gap: 18px;
+  padding: 21px 18px 0 22px; min-height: 68px;
 }
 .logo {
-  width: 46px; height: 46px;
-  border-radius: 50%;
-  background: #fff;
-  margin-right: 10px;
+  height: 48px; width: 48px; border-radius: 16px;
 }
-.logo-title {
-  font-size: 1.55rem;
-  letter-spacing: 2px;
-  color: #111;
-  font-family: 'Segoe UI', Arial, sans-serif;
-  font-weight: 700;
-  line-height: 1.1;
-}
-.logo-title span {
-  display: block;
-  font-size: 0.95rem;
-  color: #888;
-  font-weight: 400;
-  letter-spacing: 0.5px;
-}
+.logo-title { font-size: 1.8rem; letter-spacing: 0.04em; color: #222;}
+.logo-title .subtitle { font-size: 1.08rem; color: #979797; font-weight: 500; margin-top: -3px; }
 .notif-btn {
-  margin-left: auto;
-  background: none;
-  border: none;
-  font-size: 2rem;
-  color: #222;
-  cursor: pointer;
-  transition: color 0.15s;
-  outline: none;
+  margin-left: auto; background: none; border: none; font-size: 2rem;
+  cursor: pointer; color: #000; position: relative; outline: none;
 }
-.notif-btn.active { color: #48d318; }
+.notif-btn:active { color: #444; }
+#bell-off { color: #aaa; }
 main {
-  position: absolute;
-  top: 70px; left: 0;
-  width: 100vw; height: calc(100vh - 70px);
-  display: flex;
-  justify-content: center;
-  z-index: 2;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  width: 100vw; min-height: 95vh; margin-top: 8px; z-index: 2;
 }
 .main-col {
-  margin-top: 30px;
-  width: 480px;
-  max-width: 95vw;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  align-items: center;
+  margin: 0 auto; max-width: 420px; width: 98vw; display: flex; flex-direction: column;
+  gap: 30px; z-index: 2;
 }
 .panel {
-  background: #f8fbff;
-  border-radius: 22px;
-  box-shadow: 0 2px 30px 0 #e6eefb;
-  width: 100%;
-  min-height: 100px;
-  padding: 0 0 12px 0;
-  overflow: hidden;
-  position: relative;
-  z-index: 3;
+  border-radius: 28px;
+  background: #fafcff;
+  box-shadow: 0 8px 38px #eaeaea3f;
+  padding: 0 0 0 0;
+  min-width: 100%; min-height: 130px;
+  transition: box-shadow .18s;
 }
 .panel-header {
-  display: flex;
-  align-items: center;
-  font-size: 1.18rem;
-  font-weight: 700;
-  color: #172742;
-  padding: 17px 18px 7px 20px;
-  gap: 10px;
+  font-size: 1.11rem; font-weight: 700; color: #1a1a1a;
+  padding: 24px 24px 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
 }
-.reload-btn {
-  margin-left: auto;
-  background: none;
-  border: none;
-  font-size: 1.35rem;
-  cursor: pointer;
-  color: #999;
-  transition: color 0.16s;
-  outline: none;
-}
-.reload-btn:hover { color: #222; }
-.panel-body {
-  font-size: 1.06rem;
-  color: #2a2b2c;
-  padding: 6px 18px 18px 24px;
-  min-height: 70px;
-  line-height: 1.52;
-  background: transparent;
-}
-.news-list { font-size: 1rem; }
+.panel-body { padding: 20px 24px 20px 24px; font-size: 1.13rem; min-height: 65px; }
+.news-list { font-size: 1.04rem; }
 .news-item {
-  margin-bottom: 16px;
-  border-bottom: 1px solid #eef4fc;
-  padding-bottom: 8px;
+  padding: 12px 0 8px; border-bottom: 1px solid #f0f0f5;
+  display: flex; flex-direction: column; gap: 3px;
 }
-.news-title {
-  font-weight: 500;
-  color: #21357b;
-  text-decoration: underline;
-  cursor: pointer;
+.news-item:last-child { border-bottom: none; }
+.news-link {
+  font-weight: bold; color: #2450d3; text-decoration: none;
+  transition: color .13s;
 }
-.news-src {
-  font-size: 0.95em;
-  color: #999;
-  margin-left: 6px;
+.news-link:hover { color: #7fbcff; }
+.news-meta { color: #9e9e9e; font-size: .95rem; margin-top: 1px; }
+.ai-signal-line {
+  margin-bottom: 11px;
+  padding-bottom: 7px;
+  border-bottom: 1px dashed #ddd;
 }
-.news-time {
-  font-size: 0.95em;
-  color: #888;
-  margin-left: 10px;
+.typing {
+  position: fixed; left: 48vw; bottom: 36px; z-index: 10;
+  display: flex; align-items: center; gap: 5px;
+}
+.dot {
+  display: inline-block; width: 13px; height: 13px;
+  border-radius: 50%; background: #222;
+  margin: 0 1.7px;
+  animation: dot-pulse 1.1s infinite alternate;
+}
+.dot:nth-child(2) { animation-delay: .22s; }
+.dot:nth-child(3) { animation-delay: .44s; }
+@keyframes dot-pulse {
+  to { opacity: 0.18; transform: scale(.72); }
 }
 .notif-popup {
-  display: none;
-  position: fixed;
-  bottom: 38px; left: 50%;
-  transform: translateX(-50%);
-  min-width: 180px;
-  background: #181;
-  color: #fff;
-  font-weight: 500;
-  font-size: 1.14rem;
-  padding: 18px 30px;
-  border-radius: 22px;
-  box-shadow: 0 6px 22px 0 #cfc;
-  z-index: 99;
-  opacity: 0.93;
-  pointer-events: none;
-  text-align: center;
+  position: fixed; bottom: 2.3rem; left: 50%; transform: translateX(-50%);
+  background: #232c37; color: #fff; border-radius: 14px;
+  box-shadow: 0 4px 32px #0003; padding: 16px 26px; font-size: 1.13rem;
+  z-index: 99; display: none;
+  max-width: 80vw; word-break: break-word;
+  transition: opacity .19s;
 }
+.reload-btn {
+  font-size: 1.2rem; border: none; background: none; color: #666;
+  cursor: pointer; margin-left: 8px; outline: none;
+}
+.reload-btn:active { color: #222; }
 @media (max-width: 600px) {
-  .main-col { width: 99vw; }
-  .panel { border-radius: 12px; }
-  .logo-bar { gap: 12px; padding-left: 12px; }
-  .logo { width: 38px; height: 38px; }
-  .panel-header { font-size: 1.05rem; padding: 11px 8px 5px 12px; }
-  .panel-body { font-size: 0.97rem; padding: 5px 8px 12px 12px; }
+  .main-col { max-width: 99vw; }
+  .panel { border-radius: 19px; }
+  .panel-header { padding: 16px 12px 0 13px; }
+  .panel-body { padding: 14px 13px 14px 13px; }
 }
