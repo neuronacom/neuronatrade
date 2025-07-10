@@ -6,14 +6,14 @@ import openai
 import datetime
 import time
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static")
 CORS(app)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 openai.api_key = OPENAI_API_KEY
 
 NEWS_API_KEYS = {
-    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4"  # demo, можно менять
+    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4"
 }
 
 CACHE = {"signals": [], "news": [], "last_ts": 0}
@@ -41,7 +41,7 @@ def get_coingecko_price():
 
 def get_newsdata_news():
     try:
-        url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEYS['newsdata']}&q=bitcoin,crypto,cryptocurrency&language=en"
+        url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEYS['newsdata']}&q=bitcoin,crypto,cryptocurrency&language=ru"
         r = requests.get(url, timeout=5)
         arr = []
         for a in r.json().get("results", [])[:8]:
@@ -73,19 +73,19 @@ def get_coindesk_news():
         return []
 
 def gen_ai_signal(price, ob, news):
-    prompt = f"""Ты — криптоаналитик-бот NEURONA, твоя задача — дать пользователю максимально точный и обоснованный сигнал по Bitcoin (BTC/USDT): LONG, SHORT или HODL, с кратким комментарием. Используй анализ стаканов Binance (bid: {ob['bids']} ask: {ob['asks']}), цену {price}$, последние новости: {'; '.join([n['title'] for n in news[:3]])}. Только факты и сильная аргументация на сегодня."""
+    prompt = f"""Ты — криптоаналитик-бот NEURONA. Проанализируй Bitcoin (BTC/USDT) и дай максимально точный и обоснованный сигнал: LONG, SHORT или HODL, с коротким комментарием на русском. Данные: стакан Binance (bid: {ob['bids']} ask: {ob['asks']}), цена {price}$, свежие новости: {'; '.join([n['title'] for n in news[:3]])}. Отвечай только по-русски, кратко и строго по делу."""
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.33,
-            max_tokens=170,
+            temperature=0.27,
+            max_tokens=160,
         )
         content = completion.choices[0].message["content"]
         signal_type = "HODL"
-        if "LONG" in content.upper():
+        if "LONG" in content.upper() or "ЛОНГ" in content.upper():
             signal_type = "LONG"
-        elif "SHORT" in content.upper():
+        elif "SHORT" in content.upper() or "ШОРТ" in content.upper():
             signal_type = "SHORT"
         return {
             "id": int(time.time()),
@@ -112,6 +112,10 @@ def manifest():
 @app.route("/sw.js")
 def sw():
     return send_from_directory('.', 'sw.js')
+
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    return send_from_directory(app.static_folder, filename)
 
 @app.route("/api/all")
 def api_all():
