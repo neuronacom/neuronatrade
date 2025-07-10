@@ -58,11 +58,18 @@
       setTimeout(()=>el.classList.remove('active'),2300);
     }
 
-    // UI логика
+    // Safe value getter для стакана (и всего массива)
+    function safeVal(arr, idx1=0, idx2=0) {
+      return (arr && arr.length > 0 && arr[idx1] && arr[idx1][idx2]) ? arr[idx1][idx2] : "-";
+    }
+
     const chat = document.getElementById('chat');
     function msgAI(text){ chat.innerHTML+=`<div class="msg-ai">${text}</div>`; }
     function msgNews(news){
-      news.forEach(n=>chat.innerHTML+=`<div class="msg-news"><b>📰 <a href="${n.url}" target="_blank">${n.title}</a></b> <span style="color:#aaa;font-size:.95em;">${n.published_at.slice(11,16)}</span></div>`);
+      news.forEach(n=>{
+        let href = n.url ? n.url : "#";
+        chat.innerHTML+=`<div class="msg-news"><b>📰 <a href="${href}" target="_blank">${n.title}</a></b> <span style="color:#aaa;font-size:.95em;">${n.published_at ? n.published_at.slice(11,16) : ""}</span></div>`;
+      });
     }
     function msgSection(title){ chat.innerHTML+=`<div class="section-title">${title}</div>`; }
 
@@ -75,15 +82,15 @@
       chat.innerHTML = "";
       msgSection("BTC/USDT — стакан и объёмы");
       msgAI(`
-        <b>Цена:</b> $${d.btc.lastPrice}<br>
-        <b>24ч объём:</b> ${Number(d.btc.volume).toLocaleString()} BTC<br>
-        <b>Изменение 24ч:</b> ${d.btc.priceChangePercent}%<br>
-        <b>Верх стакана:</b> ${d.btc.asks[0][0]}<br>
-        <b>Низ стакана:</b> ${d.btc.bids[0][0]}
+        <b>Цена:</b> $${d.btc && d.btc.lastPrice ? d.btc.lastPrice : "-"}<br>
+        <b>24ч объём:</b> ${d.btc && d.btc.volume ? Number(d.btc.volume).toLocaleString() : "-"} BTC<br>
+        <b>Изменение 24ч:</b> ${d.btc && d.btc.priceChangePercent ? d.btc.priceChangePercent : "-"}%<br>
+        <b>Верх стакана:</b> ${safeVal(d.btc && d.btc.asks ? d.btc.asks : [])}<br>
+        <b>Низ стакана:</b> ${safeVal(d.btc && d.btc.bids ? d.btc.bids : [])}
       `);
       msgSection("Новости по BTC");
-      msgNews(d.news);
-
+      if(d.news && d.news.length) msgNews(d.news);
+      else msgAI("<i>Новости временно недоступны.</i>");
       msgSection("AI сигнал");
       msgAI("<i>Генерируем...</i>");
       fetch("/api/signal").then(r=>r.json()).then(sig=>{
