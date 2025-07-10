@@ -9,7 +9,7 @@ import time
 app = Flask(__name__, static_folder="static")
 CORS(app)
 
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+
 NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
 
 client = openai.OpenAI(api_key=OPENAI_API_KEY)  # ← Только api_key!
