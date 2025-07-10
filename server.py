@@ -10,15 +10,11 @@ app = Flask(__name__)
 CORS(app)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "")
-NEWS_API_KEYS = {
-    "cryptopanic": "2cd2ebe38c9af9d7b50c0c0b9a5d0213e6798ccd",
-    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4"
-}
-COIN_ID = "bitcoin"
-SYMBOL = "BTCUSDT"
-
 openai.api_key = OPENAI_API_KEY
+
+NEWS_API_KEYS = {
+    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4"  # demo, можно менять
+}
 
 CACHE = {"signals": [], "news": [], "last_ts": 0}
 
@@ -28,61 +24,62 @@ def get_time(ts=None):
 
 def get_binance_orderbook():
     try:
-        r = requests.get("https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=50", timeout=3)
+        r = requests.get("https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=50", timeout=4)
         j = r.json()
         bids = float(j["bids"][0][0])
         asks = float(j["asks"][0][0])
         return {"bids": bids, "asks": asks}
-    except:
+    except Exception as ex:
         return {"bids": "-", "asks": "-"}
 
 def get_coingecko_price():
     try:
-        r = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", timeout=3)
+        r = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", timeout=4)
         return r.json()["bitcoin"]["usd"]
     except:
         return "-"
 
-def get_cryptopanic_news():
-    try:
-        url = f"https://cryptopanic.com/api/v1/posts/?auth_token={NEWS_API_KEYS['cryptopanic']}&public=true"
-        r = requests.get(url, timeout=5)
-        arr = []
-        for post in r.json().get("results", [])[:7]:
-            arr.append({
-                "id": post["id"],
-                "title": post["title"],
-                "url": post["url"],
-                "time": datetime.datetime.fromisoformat(post["published_at"]).strftime('%H:%M')
-            })
-        return arr
-    except Exception as ex:
-        return []
-
 def get_newsdata_news():
     try:
-        url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEYS['newsdata']}&q=bitcoin,crypto,cryptocurrency&language=ru"
+        url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEYS['newsdata']}&q=bitcoin,crypto,cryptocurrency&language=en"
         r = requests.get(url, timeout=5)
         arr = []
-        for a in r.json().get("results", [])[:7]:
+        for a in r.json().get("results", [])[:8]:
             arr.append({
-                "id": a.get("article_id", a["link"]),
+                "id": a.get("article_id", a.get("link", "")),
                 "title": a["title"][:110],
                 "url": a["link"],
                 "time": a.get("pubDate", "")[-8:-3] if "pubDate" in a else ""
             })
         return arr
     except Exception as ex:
+        print("NEWS ERROR:", ex)
         return []
 
-def gen_ai_signal(price,ob,news):
+def get_coindesk_news():
+    try:
+        url = "https://api.coindesk.com/v1/news/latest"
+        r = requests.get(url, timeout=5)
+        arr = []
+        for a in r.json().get("data", [])[:7]:
+            arr.append({
+                "id": a["id"],
+                "title": a["headline"][:110],
+                "url": a["url"],
+                "time": a["published_at"][11:16] if "published_at" in a else ""
+            })
+        return arr
+    except Exception as ex:
+        return []
+
+def gen_ai_signal(price, ob, news):
     prompt = f"""Ты — криптоаналитик-бот NEURONA, твоя задача — дать пользователю максимально точный и обоснованный сигнал по Bitcoin (BTC/USDT): LONG, SHORT или HODL, с кратким комментарием. Используй анализ стаканов Binance (bid: {ob['bids']} ask: {ob['asks']}), цену {price}$, последние новости: {'; '.join([n['title'] for n in news[:3]])}. Только факты и сильная аргументация на сегодня."""
     try:
         completion = openai.ChatCompletion.create(
             model="gpt-4o",
-            messages=[{"role":"user","content":prompt}],
-            temperature=0.3,
-            max_tokens=180,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.33,
+            max_tokens=170,
         )
         content = completion.choices[0].message["content"]
         signal_type = "HODL"
@@ -122,10 +119,10 @@ def api_all():
     if now - CACHE["last_ts"] > 55:
         price = get_coingecko_price()
         ob = get_binance_orderbook()
-        news_1 = get_cryptopanic_news()
-        news_2 = get_newsdata_news()
-        all_news = sorted(news_1+news_2, key=lambda x:x['time'])[-8:]
-        ai_signal = gen_ai_signal(price,ob,all_news)
+        news_1 = get_newsdata_news()
+        news_2 = get_coindesk_news()
+        all_news = sorted(news_1 + news_2, key=lambda x: x['time'])[-8:]
+        ai_signal = gen_ai_signal(price, ob, all_news)
         CACHE["signals"].append(ai_signal)
         CACHE["signals"] = CACHE["signals"][-10:]
         CACHE["news"] = all_news[-8:]
@@ -136,4 +133,4 @@ def api_all():
     })
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0",port=int(os.environ.get("PORT", 5000)))
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
