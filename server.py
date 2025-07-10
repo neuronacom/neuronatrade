@@ -11,17 +11,15 @@ CORS(app)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "")
-# Публичные новостные API (найдены для тебя)
 NEWS_API_KEYS = {
-    "cryptopanic": "2cd2ebe38c9af9d7b50c0c0b9a5d0213e6798ccd",  # demo
-    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4",    # demo
+    "cryptopanic": "2cd2ebe38c9af9d7b50c0c0b9a5d0213e6798ccd",
+    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4"
 }
 COIN_ID = "bitcoin"
 SYMBOL = "BTCUSDT"
 
 openai.api_key = OPENAI_API_KEY
 
-# Кэш для сигналов и новостей
 CACHE = {"signals": [], "news": [], "last_ts": 0}
 
 def get_time(ts=None):
@@ -30,7 +28,7 @@ def get_time(ts=None):
 
 def get_binance_orderbook():
     try:
-        r = requests.get("https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=50")
+        r = requests.get("https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=50", timeout=3)
         j = r.json()
         bids = float(j["bids"][0][0])
         asks = float(j["asks"][0][0])
@@ -40,7 +38,7 @@ def get_binance_orderbook():
 
 def get_coingecko_price():
     try:
-        r = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd")
+        r = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", timeout=3)
         return r.json()["bitcoin"]["usd"]
     except:
         return "-"
@@ -48,7 +46,7 @@ def get_coingecko_price():
 def get_cryptopanic_news():
     try:
         url = f"https://cryptopanic.com/api/v1/posts/?auth_token={NEWS_API_KEYS['cryptopanic']}&public=true"
-        r = requests.get(url)
+        r = requests.get(url, timeout=5)
         arr = []
         for post in r.json().get("results", [])[:7]:
             arr.append({
@@ -58,13 +56,13 @@ def get_cryptopanic_news():
                 "time": datetime.datetime.fromisoformat(post["published_at"]).strftime('%H:%M')
             })
         return arr
-    except:
+    except Exception as ex:
         return []
 
 def get_newsdata_news():
     try:
         url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEYS['newsdata']}&q=bitcoin,crypto,cryptocurrency&language=ru"
-        r = requests.get(url)
+        r = requests.get(url, timeout=5)
         arr = []
         for a in r.json().get("results", [])[:7]:
             arr.append({
@@ -74,7 +72,7 @@ def get_newsdata_news():
                 "time": a.get("pubDate", "")[-8:-3] if "pubDate" in a else ""
             })
         return arr
-    except:
+    except Exception as ex:
         return []
 
 def gen_ai_signal(price,ob,news):
@@ -120,7 +118,6 @@ def sw():
 
 @app.route("/api/all")
 def api_all():
-    # Обновлять не чаще 1 раза в минуту
     now = time.time()
     if now - CACHE["last_ts"] > 55:
         price = get_coingecko_price()
