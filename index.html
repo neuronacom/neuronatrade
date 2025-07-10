@@ -3,128 +3,43 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-  <title>NEURONA Trade AI</title>
-  <link rel="manifest" href="/static/manifest.json">
+  <title>NEURONA</title>
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#fff">
-  <link rel="icon" href="/static/logo.png">
-  <style>
-    html, body {background:#fff; height:100%; margin:0; padding:0;}
-    body {font-family: 'Inter', Arial, sans-serif; color:#131313;}
-    .header {display:flex; align-items:center; gap:14px; padding:19px 18px 0 22px;}
-    .logo {width:40px;}
-    .title {font-size:1.25rem; font-weight:700; letter-spacing:.04em;}
-    .wrap {max-width:600px;margin:30px auto 0 auto;padding:0 8px;}
-    .feed {background:#fff; border-radius:15px; box-shadow:0 0 14px #0001; min-height:200px; padding:5px 0; max-height:79vh; overflow-y:auto;}
-    .row-news, .row-signal {display:flex; align-items:center; padding:5px 9px; font-size:1.06em;}
-    .row-news {border-left:3px solid #222; margin-bottom:2px;}
-    .row-signal {border-left:3px solid #06c4c1; background:linear-gradient(90deg, #e6fcf9 0, #fff 100%);}
-    .news-time {color:#a0a0a0; font-size:.94em; margin-right:13px; min-width:38px;}
-    .news-title {flex:1; color:#232323;}
-    .news-desc {font-size:.97em; color:#444;}
-    .news-tags {margin-left:12px;}
-    .tag {display:inline-block; margin-left:4px; padding:2px 7px; border-radius:7px; font-size:.97em;}
-    .tag-btc {background:#fff7cf;color:#b0880b;border:1px solid #ffe063;}
-    .tag-eth {background:#f5f3ff;color:#5a40a7;border:1px solid #b3a7ff;}
-    .tag-usdt {background:#e4fff4;color:#10a85c;border:1px solid #86ecc8;}
-    .tag-press {background:#ffebef;color:#c51a5e;border:1px solid #ffa8c3;}
-    .tag-other {background:#ebf2fa;color:#346597;border:1px solid #b5d0ec;}
-    .signal-label {font-weight:700;color:#03a3a1;}
-    .signal-comment {color:#222;}
-    .refresh-btn {position:absolute;top:26px;right:24px; background:0;border:0;cursor:pointer;font-size:1.3em;}
-    .notif-popup {position:fixed;left:50%;bottom:45px;transform:translateX(-50%);background:#222;color:#fff;padding:13px 30px;border-radius:23px;font-size:1.1em;z-index:999;opacity:0;pointer-events:none;transition:.25s;}
-    .notif-popup.active {opacity:1;pointer-events:auto;}
-    @media (max-width:600px){
-      .wrap {padding:0 1vw;}
-      .feed {max-height:66vh;}
-      .header {padding-left:12px;}
-      .row-news, .row-signal {font-size:0.98em;}
-    }
-  </style>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="NEURONA">
+  <link rel="apple-touch-icon" href="https://i.ibb.co/XfKRzvcy/27.png">
+  <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
+  <link rel="stylesheet" href="/main.css">
 </head>
 <body>
-  <div class="header">
-    <img class="logo" src="/static/logo.png" alt="logo">
-    <span class="title">NEURONA Trade AI</span>
-    <button class="refresh-btn" id="refreshBtn">&#8635;</button>
+<canvas id="bg"></canvas>
+<div class="top-bar" id="top-bar">
+  <div class="top-bar-content">
+    <img src="https://i.ibb.co/Mk4WpHL9/25-1.png" class="top-logo" alt="logo"/>
+    <div style="display:flex;flex-direction:column;">
+      <span class="top-title">NEURONA</span>
+      <span style="font-size:0.91rem;color:#aaa;font-weight:500;margin-top:0.3em;letter-spacing:.06em">AI Trade Bot</span>
+    </div>
   </div>
-  <div class="wrap">
-    <div class="feed" id="feed"></div>
+  <div class="notif-btn" id="notifBtn" title="Включить/выключить уведомления">
+    <svg id="bell-on" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.1"><path d="M18 8A6 6 0 0 0 6 8c0 7-2 9-2 9h16s-2-2-2-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+    <svg id="bell-off" style="display:none;" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.1"><path d="M18 8A6 6 0 0 0 6 8c0 7-2 9-2 9h16s-2-2-2-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23" stroke="black" stroke-width="2.1"/></svg>
   </div>
-  <div class="notif-popup" id="notifPopup"></div>
-  <script>
-    // helpers
-    function tagHtml(tag) {
-      const l=tag.toLowerCase();
-      if(l==="btc") return `<span class="tag tag-btc">BTC</span>`;
-      if(l==="eth") return `<span class="tag tag-eth">ETH</span>`;
-      if(l==="usdt") return `<span class="tag tag-usdt">USDT</span>`;
-      if(l==="press") return `<span class="tag tag-press">Press</span>`;
-      return `<span class="tag tag-other">${tag}</span>`;
-    }
-    function showNotif(txt) {
-      let el=document.getElementById('notifPopup');
-      el.textContent=txt;
-      el.classList.add('active');
-      setTimeout(()=>el.classList.remove('active'),2300);
-    }
-
-    // отрисовка новостной строки
-    function rowNews(n) {
-      let tags = "";
-      if(n.tags && n.tags.length) tags = `<span class="news-tags">${n.tags.map(tagHtml).join('')}</span>`;
-      let desc = n.desc ? `<div class="news-desc">${n.desc}</div>` : "";
-      return `<div class="row-news">
-        <span class="news-time">${n.published_at || ""}</span>
-        <span class="news-title">${n.title}${desc}</span>
-        ${tags}
-      </div>`;
-    }
-    // отрисовка сигнала
-    function rowSignal(signal) {
-      // сигналы формата: "Сигнал: LONG ... Комментарий: ...."
-      let [sig, ...rest] = signal.split("Комментарий:");
-      return `<div class="row-signal">
-        <span class="signal-label">${sig.trim()}</span>
-        <span class="signal-comment">${rest.join("Комментарий:").trim()}</span>
-      </div>`;
-    }
-
-    // основная логика загрузки
-    async function loadAll() {
-      const feed = document.getElementById('feed');
-      feed.innerHTML = "";
-      // новости (лента)
-      const d = await fetch("/api/data").then(r=>r.json());
-      if(d.news && d.news.length) {
-        d.news.forEach(n=>{ feed.innerHTML += rowNews(n); });
-      } else {
-        feed.innerHTML += `<div class="row-news"><span class="news-title"><i>Новостей нет</i></span></div>`;
-      }
-      // сигнал ИИ отдельной строкой
-      feed.innerHTML += `<div class="row-signal"><span>AI-сигнал: <i>генерируется...</i></span></div>`;
-      fetch("/api/signal").then(r=>r.json()).then(sig=>{
-        feed.querySelector('.row-signal').outerHTML = rowSignal(sig.signal);
-        showNotif("Сигнал BTC обновлён!");
-        if(Notification.permission==="granted") {
-          new Notification("NEURONA AI BTC Сигнал", { body: sig.signal.replace(/\n/g,' ') });
-        }
-      });
-    }
-    document.getElementById('refreshBtn').onclick=loadAll;
-
-    // уведомления
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/static/sw.js');
-    }
-    document.addEventListener("DOMContentLoaded", ()=>{
-      if (window.Notification && Notification.permission !== "granted") {
-        Notification.requestPermission().then(function(permission) {
-          if(permission === "granted") showNotif("Уведомления активированы!");
-        });
-      }
-      loadAll();
-      setInterval(loadAll, 90*1000);
-    });
-  </script>
+</div>
+<div id="main-content">
+  <div class="dialog-split">
+    <div class="news-window" id="newsWindow">
+      <!-- Новости тут -->
+    </div>
+    <div class="chat-window" id="chatWindow">
+      <!-- Сообщения ИИ тут -->
+    </div>
+  </div>
+</div>
+<div class="notif-popup" id="notifPopup"></div>
+<script src="/main.js"></script>
 </body>
 </html>
