@@ -1,97 +1,72 @@
 import os
 import requests
-from flask import Flask, jsonify
+from flask import Flask, send_from_directory, jsonify, request
 from flask_cors import CORS
 import openai
 
-BINANCE_TICKER = "https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT"
-BINANCE_ORDERBOOK = "https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=100"
-CRYPTOPANIC_NEWS = "https://cryptopanic.com/api/v1/posts/?auth_token=" + os.getenv("CRYPTOPANIC_API_KEY") + "&currencies=BTC&filter=important"
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 CORS(app)
+
+BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "")
+BINANCE_SECRET = os.environ.get("BINANCE_SECRET", "")
+CRYPTOPANIC_API_KEY = os.environ.get("CRYPTOPANIC_API_KEY", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+
 openai.api_key = OPENAI_API_KEY
 
-def fetch_binance_signal():
-    # Получаем цену и объёмы
-    ticker = requests.get(BINANCE_TICKER).json()
-    orderbook = requests.get(BINANCE_ORDERBOOK).json()
-    price = float(ticker.get("lastPrice", 0))
-    buy_vol = sum(float(b[1]) for b in orderbook["bids"])
-    sell_vol = sum(float(a[1]) for a in orderbook["asks"])
-    change = float(ticker.get("priceChangePercent", 0))
-
-    # Simple logic for entry/SL/TP
-    entry = price
-    sl = round(price * 0.985, 2)
-    tp_min = round(price * 1.008, 2)
-    tp_max = round(price * 1.025, 2)
-    signal_type = "LONG" if buy_vol > sell_vol else "SHORT"
-    color = "green" if signal_type == "LONG" else "red"
-
-    # Придумываем сигнал (здесь можно усложнить логику)
+def get_binance_btc_data():
+    base_url = "https://api.binance.com"
+    depth = requests.get(f"{base_url}/api/v3/depth?symbol=BTCUSDT&limit=10").json()
+    ticker = requests.get(f"{base_url}/api/v3/ticker/24hr?symbol=BTCUSDT").json()
     return {
-        "symbol": "BTC/USDT",
-        "type": signal_type,
-        "entry": round(entry, 2),
-        "sl": sl,
-        "tp": f"{tp_min} — {tp_max}",
-        "change": change,
-        "color": color,
-        "buy_vol": round(buy_vol, 2),
-        "sell_vol": round(sell_vol, 2)
+        "bids": depth.get("bids", []),
+        "asks": depth.get("asks", []),
+        "lastPrice": ticker.get("lastPrice"),
+        "volume": ticker.get("volume"),
+        "priceChangePercent": ticker.get("priceChangePercent")
     }
 
-def fetch_cryptopanic_news():
-    r = requests.get(CRYPTOPANIC_NEWS)
-    js = r.json()
-    news = []
-    for post in js.get("results", []):
-        news.append({
-            "title": post["title"],
-            "url": post["url"],
-            "time": post.get("published_at", ""),
-        })
-    return news
+def get_cryptopanic_news():
+    url = f"https://cryptopanic.com/api/v1/posts/?auth_token={CRYPTOPANIC_API_KEY}&currencies=BTC&public=true"
+    news = requests.get(url).json()
+    return [{"title": n['title'], "url": n['url'], "published_at": n["published_at"]} for n in news.get('results', [])[:3]]
 
-def ai_comment(signal, news):
-    if not OPENAI_API_KEY:
-        return ""
-    try:
-        prompt = f"""Ты топовый крипто-трейдер. Сигнал по BTC/USDT:
-Сигнал: {signal['type']}
-Вход: {signal['entry']}
-TP: {signal['tp']}
-SL: {signal['sl']}
-24ч Изменение: {signal['change']}%
-Объём BID: {signal['buy_vol']}, ASK: {signal['sell_vol']}
-Последняя новость: {news[0]['title'] if news else ''}
+def ai_btc_signal(data, news):
+    messages = [
+        {"role": "system", "content": "Ты профессиональный трейдер криптовалют. Дай краткий анализ BTC/USDT на основе стакана, объёмов, новостей и индикаторов (RSI, MA, MACD, OBV, OrderBook). Твои сигналы: LONG, SHORT, HOLD. Пример ответа: 'Сигнал: LONG от 58900, SL 58000, TP 60000. Комментарий: ...'"},
+        {"role": "user", "content": f"Данные Binance: {data}\nНовости: {news}"}
+    ]
+    response = openai.ChatCompletion.create(
+        model="gpt-4o",
+        messages=messages,
+        max_tokens=350
+    )
+    return response.choices[0].message.content.strip()
 
-Дай лаконичный профессиональный комментарий: как торговать, что учесть, почему так, стоит ли рисковать."""
-        response = openai.ChatCompletion.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=120,
-            temperature=0.8,
-        )
-        return response.choices[0].message.content
-    except Exception as e:
-        return f"AI error: {e}"
+@app.route("/")
+def index():
+    return send_from_directory(".", "index.html")
 
-@app.route("/api/feed")
-def api_feed():
-    try:
-        signal = fetch_binance_signal()
-        news = fetch_cryptopanic_news()
-        comment = ai_comment(signal, news)
-        return jsonify({
-            "signal": signal,
-            "news": news,
-            "ai_comment": comment
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+@app.route("/index.html")
+def index2():
+    return send_from_directory(".", "index.html")
+
+@app.route("/static/<path:path>")
+def static_files(path):
+    return send_from_directory("static", path)
+
+@app.route("/api/data")
+def api_data():
+    btc = get_binance_btc_data()
+    news = get_cryptopanic_news()
+    return jsonify({"btc": btc, "news": news})
+
+@app.route("/api/signal")
+def api_signal():
+    btc = get_binance_btc_data()
+    news = get_cryptopanic_news()
+    signal = ai_btc_signal(btc, news)
+    return jsonify({"signal": signal})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
