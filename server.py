@@ -2,8 +2,8 @@ import os
 import requests
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-import openai
 from datetime import datetime, timezone, timedelta
+import openai
 import time
 
 app = Flask(__name__, static_folder="static")
@@ -12,7 +12,7 @@ CORS(app)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
 
-client = openai.OpenAI(api_key=OPENAI_API_KEY)
+client = openai.OpenAI(api_key=OPENAI_API_KEY)  # ← Только api_key!
 
 CACHE = {
     "signals": [],
@@ -24,7 +24,7 @@ CACHE = {
 }
 
 def get_time(ts=None):
-    tz = timezone(timedelta(hours=3))  # GMT+3 (Kyiv)
+    tz = timezone(timedelta(hours=3))  # Kyiv GMT+3
     dt = datetime.fromtimestamp(ts or time.time(), tz)
     return dt.strftime('%d.%m %H:%M')
 
@@ -204,7 +204,6 @@ def api_all():
                 ids.add(n['id'])
     news = sorted(news, key=lambda x: str(x['time']))[-8:]
 
-    # Новый анализ только при изменениях
     do_analyze = False
     if (
         CACHE['last_price'] != price
