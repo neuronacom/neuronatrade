@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-title" content="NEURONA Trade AI">
   <link rel="apple-touch-icon" href="https://i.ibb.co/XfKRzvcy/27.png">
   <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
-  <link rel="stylesheet" href="main.css?v=9">
+  <link rel="stylesheet" href="main.css?v=16">
 </head>
 <body>
   <canvas id="bg"></canvas>
@@ -20,20 +20,17 @@
     <div class="logo-bar">
       <img src="https://i.ibb.co/XfKRzvcy/27.png" class="logo"/>
       <div class="logo-title">
-        <b>NEURONA</b><br><span>AI Trade Bot</span>
+        <b>NEURONA</b>
+        <div class="subtitle">AI Trade Bot</div>
       </div>
-      <button class="notif-btn" id="push-btn" title="Включить уведомления">&#128276;</button>
+      <button class="notif-btn" id="push-btn" title="Включить уведомления">
+        <span id="bell">&#128276;</span>
+        <span id="bell-off" style="display:none">&#128277;</span>
+      </button>
     </div>
   </header>
   <main>
     <div class="main-col">
-      <div class="panel ai-panel" id="ai-panel">
-        <div class="panel-header">
-          <span>BTC/USDT — AI Сигнал</span>
-          <button class="reload-btn" onclick="fetchSignal()">&#x21bb;</button>
-        </div>
-        <div class="panel-body" id="ai-signal">Загрузка...</div>
-      </div>
       <div class="panel news-panel" id="news-panel">
         <div class="panel-header">
           <span>Новости по BTC</span>
@@ -41,9 +38,19 @@
         </div>
         <div class="panel-body news-list" id="news-list">Загрузка...</div>
       </div>
+      <div class="panel ai-panel" id="ai-panel">
+        <div class="panel-header">
+          <span>BTC/USDT — AI Сигнал</span>
+          <button class="reload-btn" onclick="fetchSignal()">&#x21bb;</button>
+        </div>
+        <div class="panel-body" id="ai-signal">Загрузка...</div>
+      </div>
     </div>
     <div class="notif-popup" id="notifPopup"></div>
   </main>
-  <script src="main.js?v=9"></script>
+  <div class="typing" id="typing" style="display:none">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+  <script src="main.js?v=16"></script>
 </body>
 </html>
