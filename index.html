@@ -3,49 +3,347 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-  <title>NEURONA</title>
+  <title>NEURONA Trade AI</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#fff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="NEURONA 1.0">
-  <link rel="apple-touch-icon" href="https://i.ibb.co/XfKRzvcy/27.png">
+  <meta name="apple-mobile-web-app-title" content="NEURONA Trade AI">
   <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
-  <link rel="stylesheet" href="/main.css?v=19">
+  <link rel="apple-touch-icon" href="https://i.ibb.co/XfKRzvcy/27.png">
+  <style>
+    html,body{
+      height:100%;
+      margin:0;
+      padding:0;
+      background:#fff;
+      font-family:'Segoe UI',Arial,sans-serif;
+      color:#111;
+      overscroll-behavior:none;
+    }
+    body{
+      min-height:100vh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      background:#fff;
+    }
+    .wrap{
+      width:100vw;
+      max-width:430px;
+      min-height:100vh;
+      box-sizing:border-box;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+      align-items:stretch;
+      background:#fff;
+      border-radius:0;
+      box-shadow:0 0 0 #0000;
+      margin:0 auto;
+      padding:0;
+      position:relative;
+    }
+    .topbar{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:24px 18px 12px 14px;
+      background:#fff;
+      position:sticky;
+      top:0;
+      z-index:4;
+      border-bottom:1px solid #eee;
+    }
+    .logo{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:700;
+      font-size:1.3rem;
+      letter-spacing:0.05em;
+      color:#222;
+    }
+    .logo img{
+      width:34px;
+      height:34px;
+      border-radius:9px;
+      margin-right:6px;
+      vertical-align:middle;
+      background:#fafafa;
+    }
+    .bell{
+      cursor:pointer;
+      width:32px;
+      height:32px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:50%;
+      transition:background .2s;
+      position:relative;
+    }
+    .bell svg{
+      width:26px;
+      height:26px;
+      fill:#111;
+      transition:filter .2s;
+    }
+    .bell.bell-off svg{
+      filter: grayscale(1) brightness(0.7);
+      opacity:0.45;
+    }
+    .bell:hover{
+      background:#f3f3f3;
+    }
+    .main{
+      flex:1 1 0;
+      display:flex;
+      flex-direction:column;
+      gap:0;
+      overflow:hidden;
+      background:#fff;
+      min-height:540px;
+      position:relative;
+    }
+    .signals-box{
+      width:100%;
+      background:#fff;
+      flex: 1 1 0;
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      justify-content:flex-end;
+      overflow-y:auto;
+      scroll-behavior:smooth;
+      border-bottom:1px solid #eee;
+      max-height:60vh;
+      min-height:160px;
+      padding:0 0 0 0;
+    }
+    .news-box{
+      width:100%;
+      flex: 1 1 0;
+      display:flex;
+      flex-direction:column;
+      align-items:stretch;
+      overflow-y:auto;
+      background:#fafafa;
+      border-top:1px solid #eee;
+      min-height:120px;
+      max-height:260px;
+      padding:0 0 0 0;
+      margin-top:0;
+    }
+    .signal-msg,.news-msg{
+      display:flex;
+      align-items:flex-start;
+      gap:10px;
+      padding:16px 18px 13px 16px;
+      border-bottom:1px solid #f1f1f1;
+      font-size:1.09rem;
+      line-height:1.6;
+      word-break:break-word;
+      background:#fff;
+      transition:background .22s;
+      position:relative;
+    }
+    .signal-msg{
+      background:#fff;
+      border-left:4px solid #0d81e5;
+      margin:0 0 0 0;
+    }
+    .news-msg{
+      background:#f7faff;
+      border-left:4px solid #fac800;
+      margin:0 0 0 0;
+    }
+    .signal-msg .time,.news-msg .time{
+      margin-left:auto;
+      color:#aaa;
+      font-size:0.91em;
+      min-width:64px;
+      text-align:right;
+    }
+    .signal-type{
+      font-weight:700;
+      text-transform:uppercase;
+      margin-right:10px;
+      font-size:1.04em;
+      letter-spacing:0.03em;
+    }
+    .signal-LONG{color:#13af36;}
+    .signal-SHORT{color:#c31227;}
+    .signal-HODL{color:#207ad1;}
+    .refresh-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border:none;
+      outline:none;
+      background:none;
+      padding:6px;
+      margin-left:10px;
+      cursor:pointer;
+      font-size:1.1em;
+      color:#0d81e5;
+      border-radius:50%;
+      transition:background .2s;
+    }
+    .refresh-btn:active{
+      background:#ececec;
+    }
+    @media (max-width:430px){
+      .wrap{max-width:100vw;}
+    }
+    @media (max-width:400px){
+      .main{min-height:320px;}
+      .signals-box{min-height:80px;}
+    }
+    .notif-popup{
+      position:fixed;
+      left:50%;
+      bottom:42px;
+      transform:translateX(-50%);
+      min-width:170px;
+      background:#202020;
+      color:#fff;
+      font-size:1.01em;
+      border-radius:17px;
+      padding:14px 26px;
+      z-index:10;
+      text-align:center;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .34s;
+    }
+    .notif-popup.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+  </style>
 </head>
 <body>
-  <div id="bg-animation"></div>
-  <header class="top-bar">
-    <img src="https://i.ibb.co/XfKRzvcy/27.png" class="logo" alt="logo">
-    <div class="title-block">
-      <div class="main-title">NEURONA</div>
-      <div class="sub-title">AI Trade Bot</div>
+<div class="wrap">
+  <div class="topbar">
+    <div class="logo">
+      <img src="https://i.ibb.co/XfKRzvcy/27.png" alt="N">
+      NEURONA Trade AI
     </div>
-    <div class="bell" id="notifyBell" title="Уведомления"></div>
-  </header>
-  <main class="main">
-    <section class="news-section" id="newsSection">
-      <div class="section-header">
-        <span>Новости по BTC</span>
-        <span class="refresh-btn" onclick="loadNews()"></span>
-      </div>
-      <div id="newsFeed" class="news-feed"></div>
-    </section>
-    <section class="ai-section" id="aiSection">
-      <div class="section-header">
-        <span>BTC/USDT — AI Сигнал</span>
-        <span class="refresh-btn" onclick="loadSignal()"></span>
-      </div>
-      <div id="aiFeed" class="ai-feed"></div>
-    </section>
-  </main>
-  <div class="notif-popup" id="notifPopup"></div>
-  <script src="/main.js?v=19"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js');
+    <div class="bell bell-off" id="notifBell" title="Включить уведомления">
+      <svg id="bellOn" style="display:none" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7v2.3c0 .79-.47 1.5-1.2 1.8-.4.18-.8.5-.8 1.07V16c0 .55.45 1 1 1h16a1 1 0 0 0 1-1v-1.83c0-.57-.41-.89-.8-1.07A2.01 2.01 0 0 1 19 11.3V9a7 7 0 0 0-7-7zm0 18a2 2 0 0 0 1.995-1.85L14 18h-4a2 2 0 0 0 1.995 1.85L12 20z"/></svg>
+      <svg id="bellOff" viewBox="0 0 24 24"><path d="M18 16.08V11c0-3.31-2.69-6-6-6-.43 0-.85.05-1.25.13l1.8 1.8A3.997 3.997 0 0 1 16 11v5.08l2.29 2.3c.34-.36.71-.7 1.06-1.13-.71-.85-1.43-1.7-2.14-2.56zm-9.19-9.19A7.003 7.003 0 0 0 5 11v5.08c-1.28 1.46-2.32 2.87-3.13 4.09-.23.36-.11.85.26 1.08.36.22.85.1 1.07-.26.73-1.15 1.65-2.36 2.62-3.63l11.56 11.56a.996.996 0 1 0 1.41-1.41l-16.19-16.2A.996.996 0 1 0 3.81 2.89z"/></svg>
+    </div>
+  </div>
+  <div class="main">
+    <div class="signals-box" id="signalsBox"></div>
+    <div class="news-box" id="newsBox"></div>
+  </div>
+</div>
+<div class="notif-popup" id="notifPopup"></div>
+<script>
+let notificationEnabled = false;
+const bell = document.getElementById('notifBell');
+const bellOn = document.getElementById('bellOn');
+const bellOff = document.getElementById('bellOff');
+const notifPopup = document.getElementById('notifPopup');
+function showPopup(msg){
+  notifPopup.textContent = msg;
+  notifPopup.classList.add('show');
+  setTimeout(()=>notifPopup.classList.remove('show'),2400);
+}
+function toggleBell(active){
+  notificationEnabled = !!active;
+  bell.classList.toggle('bell-off',!active);
+  bellOn.style.display = active?'block':'none';
+  bellOff.style.display = !active?'block':'none';
+}
+bell.onclick = async function(){
+  if(notificationEnabled){
+    toggleBell(false);
+    showPopup('Уведомления выключены');
+    return;
+  }
+  if('Notification' in window){
+    if(Notification.permission==='granted'){
+      toggleBell(true);showPopup('Уведомления включены!');
+    }else if(Notification.permission!=='denied'){
+      let perm=await Notification.requestPermission();
+      if(perm==='granted'){toggleBell(true);showPopup('Уведомления включены!');}
+      else{showPopup('Разрешение не получено');}
+    }else{
+      showPopup('Уведомления заблокированы в браузере');
     }
-  </script>
+  }else{showPopup('Браузер не поддерживает уведомления');}
+};
+window.addEventListener('load',()=>{ // при старте
+  if('Notification' in window && Notification.permission==='granted') toggleBell(true);
+  else toggleBell(false);
+});
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js');
+}
+function pushNotification(title,body){
+  if(notificationEnabled && 'Notification' in window && Notification.permission==='granted'){
+    new Notification(title,{body,icon:"https://i.ibb.co/XfKRzvcy/27.png"});
+  }
+}
+function scrollDown(id){const el=document.getElementById(id);if(el)el.scrollTop=el.scrollHeight;}
+const signalsBox = document.getElementById('signalsBox');
+const newsBox = document.getElementById('newsBox');
+let lastSignalId=0,lastNewsId=0;
+async function fetchSignalsNews(manual){
+  try{
+    const res = await fetch('/api/all');
+    const data = await res.json();
+    if(data.signals && Array.isArray(data.signals)){
+      signalsBox.innerHTML = '';
+      data.signals.forEach(sig=>{
+        let t = `<div class="signal-msg">
+          <span class="signal-type signal-${sig.type}">${sig.type}</span>
+          <span>${sig.text}</span>
+          <span class="time">${sig.time}</span>
+        </div>`;
+        signalsBox.insertAdjacentHTML('beforeend',t);
+      });
+      scrollDown('signalsBox');
+      if(data.signals.length && data.signals[data.signals.length-1].id!=lastSignalId){
+        lastSignalId = data.signals[data.signals.length-1].id;
+        if(!manual) pushNotification('Крипто-сигнал',data.signals[data.signals.length-1].type+': '+data.signals[data.signals.length-1].text);
+      }
+    }
+    if(data.news && Array.isArray(data.news)){
+      newsBox.innerHTML = '';
+      data.news.forEach(n=>{
+        let t = `<div class="news-msg">
+          <span>${n.title} <a href="${n.url}" target="_blank" style="color:#0d81e5;font-size:0.96em;">↗</a></span>
+          <span class="time">${n.time}</span>
+        </div>`;
+        newsBox.insertAdjacentHTML('beforeend',t);
+      });
+      scrollDown('newsBox');
+      if(data.news.length && data.news[data.news.length-1].id!=lastNewsId){
+        lastNewsId = data.news[data.news.length-1].id;
+        if(!manual) pushNotification('Крипто-новость',data.news[data.news.length-1].title);
+      }
+    }
+  }catch(e){
+    showPopup('Ошибка загрузки');
+  }
+}
+setInterval(()=>fetchSignalsNews(false),60000);
+fetchSignalsNews(false);
+</script>
+<script>
+const btnRefresh = document.createElement('button');
+btnRefresh.className = 'refresh-btn';
+btnRefresh.innerHTML = `<svg width="22" height="22" viewBox="0 0 22 22"><path d="M16.67 6.66A6 6 0 1 0 18 11h-2l3.25 3.25c.15.15.41.15.56 0L23 11l-3.25-3.25c-.15-.15-.41-.15-.56 0z"/></svg>`;
+btnRefresh.title = "Обновить";
+btnRefresh.onclick = ()=>fetchSignalsNews(true);
+document.querySelector('.topbar').appendChild(btnRefresh);
+</script>
 </body>
 </html>
