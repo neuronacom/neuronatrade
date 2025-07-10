@@ -1,112 +1,126 @@
-let signalTimer = null, newsTimer = null;
+let notifEnabled = false;
 
-async function fetchSignal() {
-  document.getElementById('ai-signal').innerHTML = 'Загрузка...';
-  try {
-    let res = await fetch('/api/signal');
-    let js = await res.json();
-    let s = js.signal;
-    document.getElementById('ai-signal').innerHTML = `
-      <b>BTC/USDT</b> - (AI)<br>
-      <a href="https://binance.com" target="_blank" style="color:#164eff;text-decoration:underline;">binance</a> -
-      <br>Цена: $${s.price ?? '-'}
-      <br>24ч объём: ${s.volume ?? '-'} BTC
-      <br>Изменение 24ч: ${s.change ?? '-'}%
-      <br>Верх стакана: ${s.orderbook_top ?? '-'}
-      <br>Низ стакана: ${s.orderbook_bottom ?? '-'}
-      <br><b>AI:</b> ${s.comment}
-      <br><span style="font-size:0.96em;color:#bbb;">${s.time ?? ''}</span>
-    `;
-    showPush('AI сигнал BTC: ' + s.direction + ', $' + s.price + ' — ' + s.comment);
-  } catch (e) {
-    document.getElementById('ai-signal').innerHTML = 'Ошибка API: ' + e;
-  }
-}
-
-async function fetchNews() {
-  document.getElementById('news-list').innerHTML = 'Загрузка...';
-  try {
-    let res = await fetch('/api/news');
-    let js = await res.json();
-    let list = js.news.map(n => `
-      <div class="news-item">
-        <a href="${n.url}" target="_blank" class="news-title">${n.title}</a>
-        <span class="news-src">${n.source}</span>
-        <span class="news-time">${n.time}</span>
-      </div>
-    `).join('');
-    document.getElementById('news-list').innerHTML = list;
-    showPush('Новая новость: ' + (js.news[0]?.title ?? '...'));
-  } catch (e) {
-    document.getElementById('news-list').innerHTML = 'Ошибка API: ' + e;
-  }
-}
-
-// PUSH уведомления (браузер + pop-up)
-let notifActive = false;
-function showPush(msg) {
-  if (notifActive && 'Notification' in window && Notification.permission === 'granted') {
-    new Notification(msg);
-  }
+function showNotif(msg) {
   let np = document.getElementById('notifPopup');
-  if (np) {
-    np.innerText = msg;
-    np.style.display = 'block';
-    setTimeout(() => { np.style.display = 'none'; }, 4200);
-  }
+  np.innerHTML = msg;
+  np.style.display = "block";
+  setTimeout(() => { np.style.display = "none"; }, 3200);
 }
-document.getElementById('push-btn').onclick = function() {
-  if (!notifActive && 'Notification' in window) {
-    Notification.requestPermission().then(p => {
-      if (p === "granted") {
-        notifActive = true;
-        this.classList.add('active');
-        showPush('Уведомления включены');
+
+// ---- Push notification logic ----
+document.getElementById('push-btn').onclick = async function() {
+  if (notifEnabled) {
+    notifEnabled = false;
+    document.getElementById('bell').style.display = '';
+    document.getElementById('bell-off').style.display = 'none';
+    showNotif("Уведомления выключены");
+    return;
+  }
+  if (Notification && Notification.permission === "granted") {
+    notifEnabled = true;
+    document.getElementById('bell').style.display = 'none';
+    document.getElementById('bell-off').style.display = '';
+    showNotif("Уведомления включены!");
+    return;
+  }
+  if (Notification && Notification.permission !== "denied") {
+    Notification.requestPermission().then(function(permission) {
+      if (permission === "granted") {
+        notifEnabled = true;
+        document.getElementById('bell').style.display = 'none';
+        document.getElementById('bell-off').style.display = '';
+        showNotif("Уведомления включены!");
       }
     });
-  } else {
-    notifActive = false;
-    this.classList.remove('active');
-    showPush('Уведомления отключены');
   }
 };
 
-function animateDots() {
-  let canvas = document.getElementById('bg');
-  let ctx = canvas.getContext('2d');
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('sw.js');
+  });
+}
+
+function sendPush(title, body) {
+  if (notifEnabled && Notification.permission === "granted") {
+    new Notification(title, { body });
+  }
+}
+
+// --- Animated bg (простая сеть точек)
+const canvas = document.getElementById('bg');
+if (canvas) {
+  const ctx = canvas.getContext('2d');
   let w = window.innerWidth, h = window.innerHeight;
   canvas.width = w; canvas.height = h;
-  let pts = [];
-  for (let i = 0; i < 22; ++i) {
-    pts.push({x: Math.random()*w, y: Math.random()*h, dx: (Math.random()-0.5)*0.6, dy: (Math.random()-0.5)*0.6});
-  }
-  function draw() {
+  let points = [];
+  for (let i = 0; i < 24; ++i)
+    points.push({x:Math.random()*w, y:Math.random()*h, dx:(Math.random()-.5)*.5, dy:(Math.random()-.5)*.6});
+  function drawBg() {
     ctx.clearRect(0,0,w,h);
-    for (let i=0; i<pts.length; ++i) {
-      let p = pts[i];
+    for(let i=0;i<points.length;i++) {
+      let p = points[i];
       p.x += p.dx; p.y += p.dy;
-      if (p.x < 0 || p.x > w) p.dx *= -1;
-      if (p.y < 0 || p.y > h) p.dy *= -1;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 3, 0, 2*Math.PI); ctx.fillStyle="#111"; ctx.fill();
-      for (let j=i+1; j<pts.length; ++j) {
-        let d = Math.hypot(p.x-pts[j].x, p.y-pts[j].y);
-        if (d < 140) {
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y); ctx.lineTo(pts[j].x, pts[j].y);
-          ctx.strokeStyle = "rgba(10,10,10,0.09)";
-          ctx.lineWidth = 1.2; ctx.stroke();
-        }
+      if(p.x<0||p.x>w) p.dx*=-1;
+      if(p.y<0||p.y>h) p.dy*=-1;
+      ctx.beginPath(); ctx.arc(p.x,p.y,2.7,0,7); ctx.fillStyle="#111"; ctx.fill();
+      for(let j=i+1;j<points.length;j++) {
+        let q=points[j],dx=p.x-q.x,dy=p.y-q.y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<180) {ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle="#bbb2";ctx.stroke();}
       }
     }
-    requestAnimationFrame(draw);
+    requestAnimationFrame(drawBg);
   }
-  draw();
+  drawBg();
 }
+
+// -- NEWS FETCH
+async function fetchNews() {
+  let el = document.getElementById('news-list');
+  el.innerHTML = "Загрузка...";
+  try {
+    let r = await fetch('/api/news');
+    let j = await r.json();
+    el.innerHTML = "";
+    (j.news||[]).forEach(item => {
+      el.innerHTML += `
+        <div class="news-item">
+          <a class="news-link" href="${item.url}" target="_blank">${item.title}</a>
+          <div class="news-meta">${item.source || ""} • ${item.time || ""}</div>
+        </div>
+      `;
+    });
+    if (notifEnabled && j.news && j.news[0])
+      sendPush("BTC Новости", j.news[0].title);
+  } catch(e) {
+    el.innerHTML = "Нет новостей.";
+  }
+}
+
+// -- AI SIGNAL FETCH
+async function fetchSignal() {
+  let el = document.getElementById('ai-signal');
+  el.innerHTML = '<div class="typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
+  try {
+    let r = await fetch('/api/signal');
+    let j = await r.json();
+    let sig = j.signal;
+    el.innerHTML = `
+      <div class="ai-signal-line"><b>Цена:</b> $${sig.price} • <b>Объём 24ч:</b> $${sig.volume} • <b>Изм. 24ч:</b> ${sig.change}%</div>
+      <b>AI:</b> ${sig.comment} <br>
+      <b>Тренд:</b> ${sig.direction} <br>
+      <b>Время:</b> ${sig.time.replace('T',' ').replace('Z','')}
+    `;
+    if (notifEnabled)
+      sendPush("BTC Сигнал", sig.comment);
+  } catch(e) {
+    el.innerHTML = "Ошибка анализа AI.";
+  }
+}
+
 window.onload = () => {
-  animateDots();
-  fetchSignal(); fetchNews();
-  signalTimer = setInterval(fetchSignal, 62000);
-  newsTimer = setInterval(fetchNews, 60000);
+  fetchNews();
+  fetchSignal();
+  setInterval(fetchNews, 60000);
+  setInterval(fetchSignal, 60000);
 };
-window.onresize = animateDots;
