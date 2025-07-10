@@ -78,8 +78,8 @@ def gen_ai_signal(price, ob, news):
         completion = openai.ChatCompletion.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.27,
-            max_tokens=160,
+            temperature=0.22,
+            max_tokens=150,
         )
         content = completion.choices[0].message["content"]
         signal_type = "HODL"
@@ -133,7 +133,7 @@ def api_all():
         CACHE["last_ts"] = now
     return jsonify({
         "signals": CACHE["signals"][-10:],
-        "news": CACHE["news"][-8:]
+        "news": CACHE["news"][-3:]   # только 3 последние
     })
 
 if __name__ == "__main__":
