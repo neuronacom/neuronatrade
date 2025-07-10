@@ -3,54 +3,49 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-  <title>NEURONA Trade AI</title>
+  <title>NEURONA</title>
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#fff">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="NEURONA Trade AI">
+  <meta name="apple-mobile-web-app-title" content="NEURONA 1.0">
   <link rel="apple-touch-icon" href="https://i.ibb.co/XfKRzvcy/27.png">
   <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
-  <link rel="stylesheet" href="main.css?v=16">
+  <link rel="stylesheet" href="/main.css?v=19">
 </head>
 <body>
-  <canvas id="bg"></canvas>
-  <header>
-    <div class="logo-bar">
-      <img src="https://i.ibb.co/XfKRzvcy/27.png" class="logo"/>
-      <div class="logo-title">
-        <b>NEURONA</b>
-        <div class="subtitle">AI Trade Bot</div>
-      </div>
-      <button class="notif-btn" id="push-btn" title="Включить уведомления">
-        <span id="bell">&#128276;</span>
-        <span id="bell-off" style="display:none">&#128277;</span>
-      </button>
+  <div id="bg-animation"></div>
+  <header class="top-bar">
+    <img src="https://i.ibb.co/XfKRzvcy/27.png" class="logo" alt="logo">
+    <div class="title-block">
+      <div class="main-title">NEURONA</div>
+      <div class="sub-title">AI Trade Bot</div>
     </div>
+    <div class="bell" id="notifyBell" title="Уведомления"></div>
   </header>
-  <main>
-    <div class="main-col">
-      <div class="panel news-panel" id="news-panel">
-        <div class="panel-header">
-          <span>Новости по BTC</span>
-          <button class="reload-btn" onclick="fetchNews()">&#x21bb;</button>
-        </div>
-        <div class="panel-body news-list" id="news-list">Загрузка...</div>
+  <main class="main">
+    <section class="news-section" id="newsSection">
+      <div class="section-header">
+        <span>Новости по BTC</span>
+        <span class="refresh-btn" onclick="loadNews()"></span>
       </div>
-      <div class="panel ai-panel" id="ai-panel">
-        <div class="panel-header">
-          <span>BTC/USDT — AI Сигнал</span>
-          <button class="reload-btn" onclick="fetchSignal()">&#x21bb;</button>
-        </div>
-        <div class="panel-body" id="ai-signal">Загрузка...</div>
+      <div id="newsFeed" class="news-feed"></div>
+    </section>
+    <section class="ai-section" id="aiSection">
+      <div class="section-header">
+        <span>BTC/USDT — AI Сигнал</span>
+        <span class="refresh-btn" onclick="loadSignal()"></span>
       </div>
-    </div>
-    <div class="notif-popup" id="notifPopup"></div>
+      <div id="aiFeed" class="ai-feed"></div>
+    </section>
   </main>
-  <div class="typing" id="typing" style="display:none">
-    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-  </div>
-  <script src="main.js?v=16"></script>
+  <div class="notif-popup" id="notifPopup"></div>
+  <script src="/main.js?v=19"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
 </body>
 </html>
