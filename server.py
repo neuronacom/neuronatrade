@@ -10,12 +10,9 @@ app = Flask(__name__, static_folder="static")
 CORS(app)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-openai.api_key = OPENAI_API_KEY
+NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
 
-NEWS_API_KEYS = {
-    "newsdata": "pub_86551015ead451be862a2f2a758505e5355c4", # твой ключ
-    # можешь добавить свои другие api-ключи
-}
+openai.api_key = OPENAI_API_KEY
 
 CACHE = {"signals": [], "news": [], "last_ts": 0}
 
@@ -30,7 +27,7 @@ def get_binance_orderbook():
         bids = float(j["bids"][0][0])
         asks = float(j["asks"][0][0])
         return {"bids": bids, "asks": asks}
-    except Exception as ex:
+    except Exception:
         return {"bids": "-", "asks": "-"}
 
 def get_coingecko_price():
@@ -42,10 +39,10 @@ def get_coingecko_price():
 
 def get_newsdata_news():
     try:
-        url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEYS['newsdata']}&q=bitcoin,crypto,cryptocurrency&language=ru"
+        url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEY}&q=bitcoin,crypto,cryptocurrency&language=ru"
         r = requests.get(url, timeout=5)
         arr = []
-        for a in r.json().get("results", [])[:8]:
+        for a in r.json().get("results", [])[:7]:
             arr.append({
                 "id": a.get("article_id", a.get("link", "")),
                 "title": a["title"][:110],
@@ -70,7 +67,7 @@ def get_coindesk_news():
                 "time": a["published_at"][11:16] if "published_at" in a else ""
             })
         return arr
-    except Exception as ex:
+    except Exception:
         return []
 
 def gen_ai_signal(price, ob, news):
@@ -134,7 +131,7 @@ def api_all():
         CACHE["last_ts"] = now
     return jsonify({
         "signals": CACHE["signals"][-10:],
-        "news": CACHE["news"][-3:]   # только 3 последние
+        "news": CACHE["news"][-3:]
     })
 
 if __name__ == "__main__":
