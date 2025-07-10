@@ -3,7 +3,7 @@ const signalsPane = document.getElementById('signals-pane');
 const notifPopup = document.getElementById('notifPopup');
 const notifPopupMsg = document.getElementById('notifPopupMsg');
 
-// --- Canvas BG (можешь отключить если не надо)
+// --- Canvas BG
 let bg = document.getElementById("bg");
 if (bg) {
   let ctx = bg.getContext("2d");
@@ -54,7 +54,7 @@ function showNotif(msg) {
   setTimeout(()=>notifPopup.classList.remove("active"),2800);
 }
 
-// --- Load NEWS, translate if not RU, show every minute
+// --- NEWS
 let lastNewsIds = [];
 async function fetchNews() {
   let r = await fetch('/api/news');
@@ -78,39 +78,43 @@ async function fetchNews() {
     </div>`;
   }
   newsPane.innerHTML = html;
-  // push уведомление для новых
   if (lastNewsIds.length && shownIds[0] !== lastNewsIds[0]) {
     showNotif('📰 Новость: ' + news[0].title);
-    // Пуш на телефон (если разрешено)
     if (window.Notification && Notification.permission === "granted")
       new Notification("NEURONA: Новая новость", { body: news[0].title, icon: "https://i.ibb.co/XfKRzvcy/27.png"});
   }
   lastNewsIds = shownIds;
 }
 fetchNews();
-setInterval(fetchNews, 60000); // обновление каждую минуту
+setInterval(fetchNews, 60000);
 
-// --- Dummy Signals (замени на свой анализ)
+// --- СИГНАЛЫ/АНАЛИТИКА с backend
 async function fetchSignals() {
-  // Пример сигнала — потом заменишь на ИИ
+  let r = await fetch('/api/signal');
+  let data = await r.json();
+  let s = data.signal || {};
   let html = `
-    <div class="news-item" style="font-weight:600;color:#237d3b;">
-      <div class="news-title">BTC/USDT LONG (AI)</div>
+    <div class="news-item" style="font-weight:600;color:${s.direction=='LONG'?'#1d9a3a':'#d13a3a'};">
+      <div class="news-title">${s.symbol} ${s.direction} <span style="color:#888;font-size:0.95em">(${s.confidence||'AI'})</span></div>
       <div class="news-meta">
-        <span class="news-source">neurona.ai</span>
-        <span>${new Date().toLocaleString('ru-RU').slice(0,17)}</span>
+        <span class="news-source">binance</span>
+        <span>${s.time || ''}</span>
       </div>
-      <div style="color:#666;font-size:.98rem;margin-top:3px">Открыть длинную позицию. Текущий тренд: восходящий.<br>Рекомендация от NEURONA AI.</div>
+      <div style="color:#666;font-size:.98rem;margin-top:3px">
+        Цена: $${s.price||'-'}<br>
+        24ч объём: ${s.volume||'-'} BTC<br>
+        Изменение 24ч: ${s.change||'-'}%<br>
+        Верх стакана: ${s.orderbook_top||'-'}<br>
+        Низ стакана: ${s.orderbook_bottom||'-'}<br>
+        <b>AI:</b> ${s.comment||''}
+      </div>
     </div>
   `;
   signalsPane.innerHTML = html;
 }
 fetchSignals();
-setInterval(fetchSignals, 61000);
+setInterval(fetchSignals, 65000);
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js');
-}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 if (window.Notification && Notification.permission !== "granted")
   Notification.requestPermission();
-
