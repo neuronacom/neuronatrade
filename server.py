@@ -27,22 +27,26 @@ def get_binance_orderbook():
         bids = float(j["bids"][0][0])
         asks = float(j["asks"][0][0])
         return {"bids": bids, "asks": asks}
-    except Exception:
+    except Exception as ex:
+        print("BINANCE ERROR:", ex)
         return {"bids": "-", "asks": "-"}
 
 def get_coingecko_price():
     try:
         r = requests.get("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd", timeout=4)
         return r.json()["bitcoin"]["usd"]
-    except:
+    except Exception as ex:
+        print("COINGECKO ERROR:", ex)
         return "-"
 
+# NewsData API (регистрация нужна)
 def get_newsdata_news():
     try:
+        if not NEWS_API_KEY: return []
         url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEY}&q=bitcoin,crypto,cryptocurrency&language=ru"
         r = requests.get(url, timeout=5)
         arr = []
-        for a in r.json().get("results", [])[:7]:
+        for a in r.json().get("results", [])[:5]:
             arr.append({
                 "id": a.get("article_id", a.get("link", "")),
                 "title": a["title"][:110],
@@ -51,15 +55,34 @@ def get_newsdata_news():
             })
         return arr
     except Exception as ex:
-        print("NEWS ERROR:", ex)
+        print("NEWSDATA ERROR:", ex)
         return []
 
+# CryptoPanic API (может без ключа, ограничено)
+def get_cryptopanic_news():
+    try:
+        url = "https://cryptopanic.com/api/v1/posts/?auth_token=&public=true&currencies=BTC,ETH"
+        r = requests.get(url, timeout=6)
+        arr = []
+        for a in r.json().get("results", [])[:5]:
+            arr.append({
+                "id": a.get("id"),
+                "title": a["title"][:110],
+                "url": a["url"],
+                "time": a["published_at"][11:16] if "published_at" in a else ""
+            })
+        return arr
+    except Exception as ex:
+        print("CRYPTOPANIC ERROR:", ex)
+        return []
+
+# CoinDesk бесплатный (EN)
 def get_coindesk_news():
     try:
         url = "https://api.coindesk.com/v1/news/latest"
         r = requests.get(url, timeout=5)
         arr = []
-        for a in r.json().get("data", [])[:7]:
+        for a in r.json().get("data", [])[:5]:
             arr.append({
                 "id": a["id"],
                 "title": a["headline"][:110],
@@ -67,7 +90,26 @@ def get_coindesk_news():
                 "time": a["published_at"][11:16] if "published_at" in a else ""
             })
         return arr
-    except Exception:
+    except Exception as ex:
+        print("COINDESK ERROR:", ex)
+        return []
+
+# CryptoCompare (EN, бесплатный, но только заголовки)
+def get_cryptocompare_news():
+    try:
+        url = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN"
+        r = requests.get(url, timeout=5)
+        arr = []
+        for a in r.json().get("Data", [])[:5]:
+            arr.append({
+                "id": a["id"],
+                "title": a["title"][:110],
+                "url": a["url"],
+                "time": a["published_on"] if "published_on" in a else ""
+            })
+        return arr
+    except Exception as ex:
+        print("CRYPTOCOMPARE ERROR:", ex)
         return []
 
 def gen_ai_signal(price, ob, news):
@@ -92,6 +134,7 @@ def gen_ai_signal(price, ob, news):
             "time": get_time()
         }
     except Exception as e:
+        print("OPENAI ERROR:", e)
         return {
             "id": int(time.time()),
             "type": "HODL",
@@ -121,13 +164,25 @@ def api_all():
     if now - CACHE["last_ts"] > 55:
         price = get_coingecko_price()
         ob = get_binance_orderbook()
-        news_1 = get_newsdata_news()
-        news_2 = get_coindesk_news()
-        all_news = sorted(news_1 + news_2, key=lambda x: x['time'])[-8:]
-        ai_signal = gen_ai_signal(price, ob, all_news)
+        news = []
+        # собираем все доступные новости (без дублирования id)
+        news_sources = [
+            get_newsdata_news(),
+            get_coindesk_news(),
+            get_cryptopanic_news(),
+            get_cryptocompare_news(),
+        ]
+        ids = set()
+        for src in news_sources:
+            for n in src:
+                if n['id'] not in ids:
+                    news.append(n)
+                    ids.add(n['id'])
+        news = sorted(news, key=lambda x: str(x['time']))[-8:]
+        ai_signal = gen_ai_signal(price, ob, news)
         CACHE["signals"].append(ai_signal)
         CACHE["signals"] = CACHE["signals"][-10:]
-        CACHE["news"] = all_news[-8:]
+        CACHE["news"] = news[-8:]
         CACHE["last_ts"] = now
     return jsonify({
         "signals": CACHE["signals"][-10:],
