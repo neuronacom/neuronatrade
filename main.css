@@ -1,154 +1,166 @@
 html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  width: 100vw; height: 100vh;
+  margin: 0; padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Arial, sans-serif;
   background: #fff;
-  color: #191919;
-}
-body {
   overflow: hidden;
 }
-canvas#bg {
+#bg {
   position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
   z-index: 0;
-  pointer-events: none;
+  left: 0; top: 0;
+  width: 100vw; height: 100vh;
 }
-.top-bar {
+header {
   width: 100vw;
+  height: 70px;
   background: #fff;
-  box-shadow: 0 2px 9px #0001;
-  position: fixed;
   z-index: 10;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 64px;
-  top: 0;
-  left: 0;
-  padding: 0 18px 0 18px;
-}
-.top-bar-content {
+  box-shadow: 0 1px 12px 0 #eee;
   display: flex;
   align-items: center;
-  gap: 15px;
 }
-.top-logo {
-  width: 48px;
-  height: 48px;
-  border-radius: 18px;
-}
-.top-title {
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  color: #111;
-}
-.top-subtitle {
-  font-size: .9rem;
-  color: #666;
-  letter-spacing: .8px;
-}
-.top-notif {
-  cursor: pointer;
-  margin-left: 15px;
-}
-.neuro-main {
+.logo-bar {
   display: flex;
-  gap: 18px;
-  padding: 80px 18px 18px 18px;
-  max-width: 1100px;
-  margin: 0 auto;
-  height: calc(100vh - 85px);
+  align-items: center;
+  padding-left: 22px;
+  gap: 20px;
+  width: 100%;
 }
-.news-pane {
-  flex: 1 1 42%;
+.logo {
+  width: 46px; height: 46px;
+  border-radius: 50%;
   background: #fff;
-  border-radius: 22px;
-  box-shadow: 0 2px 18px #0001;
-  padding: 16px 0 10px 0;
-  overflow-y: auto;
-  min-width: 340px;
-  max-width: 470px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-.signals-pane {
-  flex: 2 1 55%;
-  background: #fafcff;
-  border-radius: 22px;
-  box-shadow: 0 2px 18px #0001;
-  padding: 16px 0 10px 0;
-  margin-left: 0;
-  overflow-y: auto;
-  min-width: 320px;
-  max-width: 720px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-.news-item {
-  padding: 15px 20px 10px 25px;
-  border-bottom: 1px solid #ececec;
-  font-size: 1.05rem;
-  line-height: 1.32;
-  cursor: pointer;
-  transition: background 0.1s;
-}
-.news-item:hover {
-  background: #f7f7f7;
-}
-.news-title {
-  color: #111;
-  font-weight: 500;
-  font-size: 1.07rem;
-  text-decoration: none;
-  display: block;
-}
-.news-meta {
-  font-size: .9rem;
-  color: #666;
-  margin-top: 1px;
-}
-.news-source {
-  color: #1d83ff;
-  font-size: .9rem;
-  text-decoration: underline;
   margin-right: 10px;
 }
-.notif-popup {
-  position: fixed;
-  left: 50%;
-  bottom: 50px;
-  transform: translateX(-50%);
-  background: #fff;
-  box-shadow: 0 4px 24px #0002;
-  padding: 10px 28px;
-  border-radius: 19px;
-  font-size: 1.12rem;
+.logo-title {
+  font-size: 1.55rem;
+  letter-spacing: 2px;
   color: #111;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.logo-title span {
+  display: block;
+  font-size: 0.95rem;
+  color: #888;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+}
+.notif-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  color: #222;
+  cursor: pointer;
+  transition: color 0.15s;
+  outline: none;
+}
+.notif-btn.active { color: #48d318; }
+main {
+  position: absolute;
+  top: 70px; left: 0;
+  width: 100vw; height: calc(100vh - 70px);
+  display: flex;
+  justify-content: center;
+  z-index: 2;
+}
+.main-col {
+  margin-top: 30px;
+  width: 480px;
+  max-width: 95vw;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  align-items: center;
+}
+.panel {
+  background: #f8fbff;
+  border-radius: 22px;
+  box-shadow: 0 2px 30px 0 #e6eefb;
+  width: 100%;
+  min-height: 100px;
+  padding: 0 0 12px 0;
+  overflow: hidden;
+  position: relative;
+  z-index: 3;
+}
+.panel-header {
   display: flex;
   align-items: center;
-  gap: 11px;
-  z-index: 999;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .22s;
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: #172742;
+  padding: 17px 18px 7px 20px;
+  gap: 10px;
 }
-.notif-popup.active { opacity: 1; pointer-events: auto; }
-::-webkit-scrollbar {width:7px;background:#fff;}
-::-webkit-scrollbar-thumb {background:#ececec;border-radius:8px;}
-@media (max-width: 900px) {
-  .neuro-main { flex-direction: column; padding: 68px 0 0 0; gap: 6px;}
-  .news-pane, .signals-pane { max-width: 100vw; min-width: unset; }
+.reload-btn {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1.35rem;
+  cursor: pointer;
+  color: #999;
+  transition: color 0.16s;
+  outline: none;
+}
+.reload-btn:hover { color: #222; }
+.panel-body {
+  font-size: 1.06rem;
+  color: #2a2b2c;
+  padding: 6px 18px 18px 24px;
+  min-height: 70px;
+  line-height: 1.52;
+  background: transparent;
+}
+.news-list { font-size: 1rem; }
+.news-item {
+  margin-bottom: 16px;
+  border-bottom: 1px solid #eef4fc;
+  padding-bottom: 8px;
+}
+.news-title {
+  font-weight: 500;
+  color: #21357b;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.news-src {
+  font-size: 0.95em;
+  color: #999;
+  margin-left: 6px;
+}
+.news-time {
+  font-size: 0.95em;
+  color: #888;
+  margin-left: 10px;
+}
+.notif-popup {
+  display: none;
+  position: fixed;
+  bottom: 38px; left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  background: #181;
+  color: #fff;
+  font-weight: 500;
+  font-size: 1.14rem;
+  padding: 18px 30px;
+  border-radius: 22px;
+  box-shadow: 0 6px 22px 0 #cfc;
+  z-index: 99;
+  opacity: 0.93;
+  pointer-events: none;
+  text-align: center;
 }
 @media (max-width: 600px) {
-  .top-title { font-size: 1.2rem; }
-  .top-logo { width: 34px; height: 34px;}
-  .news-item { font-size: 0.99rem; padding-left: 12px;}
-  .news-pane, .signals-pane { border-radius: 0; }
+  .main-col { width: 99vw; }
+  .panel { border-radius: 12px; }
+  .logo-bar { gap: 12px; padding-left: 12px; }
+  .logo { width: 38px; height: 38px; }
+  .panel-header { font-size: 1.05rem; padding: 11px 8px 5px 12px; }
+  .panel-body { font-size: 0.97rem; padding: 5px 8px 12px 12px; }
 }
