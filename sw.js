@@ -1,7 +1,6 @@
-const CACHE_NAME = 'neurona-trade-v1';
+const CACHE_NAME = 'neurona-trade-v2';
 const urlsToCache = [
   '/',
-  '/index.html',
   '/manifest.json'
 ];
 self.addEventListener('install', e => {
