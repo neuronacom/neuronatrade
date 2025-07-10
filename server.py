@@ -3,7 +3,7 @@ import requests
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 import openai
-import datetime
+from datetime import datetime, timezone, timedelta
 import time
 
 app = Flask(__name__, static_folder="static")
@@ -12,7 +12,7 @@ CORS(app)
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
 
-openai.api_key = OPENAI_API_KEY
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 CACHE = {
     "signals": [],
@@ -24,7 +24,8 @@ CACHE = {
 }
 
 def get_time(ts=None):
-    dt = datetime.datetime.fromtimestamp(ts or time.time())
+    tz = timezone(timedelta(hours=3))  # GMT+3 (Kyiv)
+    dt = datetime.fromtimestamp(ts or time.time(), tz)
     return dt.strftime('%d.%m %H:%M')
 
 def get_binance_orderbook():
@@ -112,7 +113,7 @@ def get_cryptocompare_news():
                 "id": a["id"],
                 "title": a["title"][:110],
                 "url": a["url"],
-                "time": datetime.datetime.fromtimestamp(a.get("published_on", 0)).strftime("%H:%M"),
+                "time": datetime.fromtimestamp(a.get("published_on", 0)).strftime("%H:%M"),
                 "src": "cryptocompare"
             })
         return arr
@@ -122,7 +123,7 @@ def get_cryptocompare_news():
 
 def translate_text(text):
     try:
-        completion = openai.ChatCompletion.create(
+        completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
                 {"role": "user", "content": f"Переведи на русский кратко и понятно:\n\n{text}"}
@@ -130,7 +131,7 @@ def translate_text(text):
             temperature=0.15,
             max_tokens=130,
         )
-        return completion.choices[0].message["content"]
+        return completion.choices[0].message.content
     except Exception as ex:
         print("TRANSLATE ERROR:", ex)
         return text
@@ -139,13 +140,13 @@ def gen_ai_signal(price, ob, news):
     news_titles = [n['title'] for n in news[:3]]
     prompt = f"""Ты — криптоаналитик-бот NEURONA. Проанализируй Bitcoin (BTC/USDT) и дай максимально точный и обоснованный сигнал: LONG, SHORT или HODL, с коротким комментарием на русском. Данные: стакан Binance (bid: {ob['bids']} ask: {ob['asks']}), цена {price}$, свежие новости: {'; '.join(news_titles)}. Отвечай только по-русски, кратко и строго по делу."""
     try:
-        completion = openai.ChatCompletion.create(
+        completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.18,
             max_tokens=150,
         )
-        content = completion.choices[0].message["content"]
+        content = completion.choices[0].message.content
         signal_type = "HODL"
         if "LONG" in content.upper() or "ЛОНГ" in content.upper():
             signal_type = "LONG"
@@ -198,13 +199,12 @@ def api_all():
     for src in news_sources:
         for n in src:
             if n['id'] not in ids:
-                # Переводим новость
                 n['title'] = translate_text(n['title'])
                 news.append(n)
                 ids.add(n['id'])
     news = sorted(news, key=lambda x: str(x['time']))[-8:]
 
-    # Если изменилась цена, новости или стакан — только тогда делаем новый анализ
+    # Новый анализ только при изменениях
     do_analyze = False
     if (
         CACHE['last_price'] != price
