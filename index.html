@@ -14,11 +14,10 @@
     .logo {width:40px;}
     .title {font-size:1.25rem; font-weight:700; letter-spacing:.04em;}
     .wrap {max-width:460px;margin:30px auto 0 auto;padding:0 10px;}
-    .chat {background:#f6f8fa; border-radius:20px; box-shadow:0 0 24px #0001; min-height:350px; padding:18px 14px; max-height:70vh; overflow:auto;}
+    .chat {background:#f6f8fa; border-radius:20px; box-shadow:0 0 24px #0001; min-height:220px; padding:18px 14px; max-height:70vh; overflow:auto;}
     .msg-ai {margin-bottom:19px; border-left:3px solid #00C9A7; padding-left:10px; font-size:1.1em;}
-    .msg-news {margin:9px 0 13px 0;}
-    .msg-user {color:#aaa;}
-    .section-title {margin:21px 0 12px; font-weight:700; font-size:1.08em;}
+    .msg-news {margin:18px 0 18px 0; font-size:1.12em; line-height:1.5;}
+    .section-title {margin:18px 0 11px; font-weight:700; font-size:1.1em;}
     .refresh-btn {position:absolute;top:26px;right:24px; background:0;border:0;cursor:pointer;font-size:1.3em;}
     .notif-popup {position:fixed;left:50%;bottom:45px;transform:translateX(-50%);background:#222;color:#fff;padding:13px 30px;border-radius:23px;font-size:1.1em;z-index:999;opacity:0;pointer-events:none;transition:.25s;}
     .notif-popup.active {opacity:1;pointer-events:auto;}
@@ -40,7 +39,7 @@
   </div>
   <div class="notif-popup" id="notifPopup"></div>
   <script>
-    // PWA и запрос разрешения на уведомления
+    // PWA и разрешение уведомлений
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/static/sw.js');
     }
@@ -58,44 +57,30 @@
       setTimeout(()=>el.classList.remove('active'),2300);
     }
 
-    // Safe value getter для стакана (и всего массива)
-    function safeVal(arr, idx1=0, idx2=0) {
-      return (arr && arr.length > 0 && arr[idx1] && arr[idx1][idx2]) ? arr[idx1][idx2] : "-";
-    }
-
     const chat = document.getElementById('chat');
     function msgAI(text){ chat.innerHTML+=`<div class="msg-ai">${text}</div>`; }
     function msgNews(news){
       news.forEach(n=>{
-        let href = n.url ? n.url : "#";
-        chat.innerHTML+=`<div class="msg-news"><b>📰 <a href="${href}" target="_blank">${n.title}</a></b> <span style="color:#aaa;font-size:.95em;">${n.published_at ? n.published_at.slice(11,16) : ""}</span></div>`;
+        let txt = n.title;
+        if(n.desc) txt += "<br><i>"+n.desc+"</i>";
+        let t = n.published_at ? n.published_at : "";
+        chat.innerHTML+=`<div class="msg-news">${txt}<span style="color:#aaa;float:right">${t}</span></div>`;
       });
     }
     function msgSection(title){ chat.innerHTML+=`<div class="section-title">${title}</div>`; }
 
-    // Данные с сервера
+    // Только одна новость и сигнал по ней!
     async function loadAll(){
       chat.innerHTML="";
-      msgSection("Актуальный BTC анализ");
-      msgAI("<i>Обновляем...</i>");
+      msgSection("BTC/USDT — новость");
       const d = await fetch("/api/data").then(r=>r.json());
-      chat.innerHTML = "";
-      msgSection("BTC/USDT — стакан и объёмы");
-      msgAI(`
-        <b>Цена:</b> $${d.btc && d.btc.lastPrice ? d.btc.lastPrice : "-"}<br>
-        <b>24ч объём:</b> ${d.btc && d.btc.volume ? Number(d.btc.volume).toLocaleString() : "-"} BTC<br>
-        <b>Изменение 24ч:</b> ${d.btc && d.btc.priceChangePercent ? d.btc.priceChangePercent : "-"}%<br>
-        <b>Верх стакана:</b> ${safeVal(d.btc && d.btc.asks ? d.btc.asks : [])}<br>
-        <b>Низ стакана:</b> ${safeVal(d.btc && d.btc.bids ? d.btc.bids : [])}
-      `);
-      msgSection("Новости по BTC");
       if(d.news && d.news.length) msgNews(d.news);
-      else msgAI("<i>Новости временно недоступны.</i>");
+      else msgAI("<i>Новость временно недоступна.</i>");
       msgSection("AI сигнал");
       msgAI("<i>Генерируем...</i>");
       fetch("/api/signal").then(r=>r.json()).then(sig=>{
         chat.innerHTML+=`<div class="msg-ai"><b>${sig.signal.replace(/\n/g,'<br>')}</b></div>`;
-        showNotif("Обновлено! Сигнал BTC готов.");
+        showNotif("Сигнал BTC обновлён!");
         if(Notification.permission==="granted") {
           new Notification("NEURONA AI BTC Сигнал", { body: sig.signal.replace(/\n/g,' ') });
         }
@@ -103,7 +88,7 @@
     }
     document.getElementById('refreshBtn').onclick=loadAll;
     loadAll();
-    setInterval(loadAll, 5*60*1000);
+    setInterval(loadAll, 60*1000);
   </script>
 </body>
 </html>
