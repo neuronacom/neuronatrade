@@ -1,6 +1,6 @@
 import os
 import requests
-from flask import Flask, send_from_directory, jsonify, request
+from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 import openai
 
@@ -11,8 +11,6 @@ BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "")
 BINANCE_SECRET = os.environ.get("BINANCE_SECRET", "")
 CRYPTOPANIC_API_KEY = os.environ.get("CRYPTOPANIC_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-
-openai.api_key = OPENAI_API_KEY
 
 def get_binance_btc_data():
     try:
@@ -54,11 +52,13 @@ def get_cryptopanic_news():
 
 def ai_btc_signal(data, news):
     try:
+        import openai
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
         messages = [
             {"role": "system", "content": "Ты профессиональный трейдер криптовалют. Дай краткий анализ BTC/USDT на основе стакана, объёмов, новостей и индикаторов (RSI, MA, MACD, OBV, OrderBook). Твои сигналы: LONG, SHORT, HOLD. Пример ответа: 'Сигнал: LONG от 58900, SL 58000, TP 60000. Комментарий: ...'"},
             {"role": "user", "content": f"Данные Binance: {data}\nНовости: {news}"}
         ]
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
             max_tokens=350
