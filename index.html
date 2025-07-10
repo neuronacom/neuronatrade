@@ -57,7 +57,7 @@
       margin:0 auto;
       display:flex;
       align-items:center;
-      justify-content:flex-end;
+      justify-content:space-between;
       padding:20px 18px 12px 12px;
       background:#fff;
       position:sticky;
@@ -65,6 +65,24 @@
       z-index:4;
       border-bottom:1px solid #eee;
       box-sizing:border-box;
+    }
+    .logo{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:700;
+      font-size:1.24rem;
+      letter-spacing:0.05em;
+      color:#222;
+      white-space:nowrap;
+    }
+    .logo img{
+      width:34px;
+      height:34px;
+      border-radius:9px;
+      margin-right:6px;
+      vertical-align:middle;
+      background:#fafafa;
     }
     .bell{
       cursor:pointer;
@@ -81,7 +99,6 @@
       width:26px;
       height:26px;
       display:block;
-      filter:drop-shadow(0 0 0 #fff);
       opacity:1;
       transition:opacity .2s;
     }
@@ -244,6 +261,10 @@
 <body>
 <div class="wrap">
   <div class="topbar">
+    <div class="logo">
+      <img src="https://i.ibb.co/XfKRzvcy/27.png" alt="N">
+      NEURONA Trade AI
+    </div>
     <div class="bell bell-off" id="notifBell" title="Включить уведомления">
       <img src="/static/bell.png" alt="Bell" width="26" height="26" id="bellIcon"/>
     </div>
