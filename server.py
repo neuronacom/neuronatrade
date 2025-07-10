@@ -1,130 +1,102 @@
-import os, time, requests
-from flask import Flask, jsonify
+import os
+import requests
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import openai
 
-# Ключи Heroku
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY")
-BINANCE_SECRET = os.environ.get("BINANCE_SECRET")
-
-# Публичные news API (GNews/Newsdata/Coingecko/Finage/cryptopanic)
-NEWS_APIS = [
-    "https://newsdata.io/api/1/news?apikey=pub_336810a07913f9a5e19f889ae982197d32492&q=bitcoin,crypto,blockchain&language=en",
-    "https://gnews.io/api/v4/search?q=crypto&lang=en&token=91397e060e2ae8ee8e1dbd5d60725341"
-]
-CRYPTOPANIC_API = "https://cryptopanic.com/api/v1/posts/?auth_token=2cd2ebe38c9af9d7b50c0c0b9a5d0213e6798ccd&public=true"
-COINGECKO_API = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin&vs_currencies=usd"
-CMC_API = "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=5"
-CMC_KEY = "c3f5c286-e124-4f13-8da2-47fdb5f41051"
-
-app = Flask(__name__)
+app = Flask(__name__, static_folder='.', static_url_path='')
 CORS(app)
 
-openai.api_key = OPENAI_API_KEY
+# Ключи — Heroku через env (OpenAI, Binance), публичные — здесь
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+BINANCE_API_KEY = os.environ.get("BINANCE_API_KEY", "")
+BINANCE_SECRET = os.environ.get("BINANCE_SECRET", "")
 
-@app.route("/api/news")
+# Публичные API для крипто-новостей (встроенные)
+NEWS_APIS = [
+    # CryptoPanic (public API, demo)
+    'https://cryptopanic.com/api/v1/posts/?auth_token=2cd2ebe38c9af9d7b50c0c0b9a5d0213e6798ccd&public=true',
+    # CryptoControl
+    'https://cryptocontrol.io/api/v1/public/news/coin/bitcoin',
+    # CoinStats News
+    'https://api.coinstats.app/public/v1/news?skip=0&limit=5',
+    # GNews
+    'https://gnews.io/api/v4/search?q=bitcoin&token=5dd2c6e66e490b0e1195c795b63ef822',
+]
+
+@app.route('/')
+def index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:path>')
+def static_proxy(path):
+    return send_from_directory('.', path)
+
+@app.route('/api/news')
 def api_news():
-    out = []
+    news = []
     for url in NEWS_APIS:
         try:
-            r = requests.get(url,timeout=8).json()
-            arts = []
-            if "results" in r: arts = r["results"]
-            elif "articles" in r: arts = r["articles"]
-            for n in arts:
-                out.append({
-                    "title": n.get("title") or n.get("title", ""),
-                    "url": n.get("link") or n.get("url", ""),
-                    "summary": n.get("description") or "",
-                    "time": n.get("pubDate") or n.get("publishedAt") or "",
-                    "source": n.get("source_id") or n.get("source", {}).get("name") or "",
-                    "id": n.get("link") or n.get("url") or n.get("title"),
-                    "impact": ""
+            r = requests.get(url, timeout=5)
+            j = r.json()
+            # Пытаемся вытянуть новости из разных структур
+            if "results" in j:
+                articles = j["results"]
+            elif "data" in j:
+                articles = j["data"]
+            elif "articles" in j:
+                articles = j["articles"]
+            elif "posts" in j:
+                articles = j["posts"]
+            else:
+                articles = j if isinstance(j, list) else []
+            # Форматируем
+            for a in articles[:5]:
+                news.append({
+                    "title": a.get("title") or a.get("headline"),
+                    "url": a.get("url"),
+                    "time": a.get("published_at") or a.get("published") or a.get("created_at"),
+                    "source": url.split('/')[2]
                 })
-        except: pass
-    # Добавляем cryptopanic
+        except Exception as ex:
+            continue
+    # Сортировка по времени (самые свежие)
+    news = sorted(news, key=lambda x: x.get("time", ""), reverse=True)
+    return jsonify({"articles": news[:8]})
+
+@app.route('/api/cryptopanic')
+def api_panic():
+    url = NEWS_APIS[0]
     try:
-        r = requests.get(CRYPTOPANIC_API,timeout=6).json()
-        for n in r.get("results",[]):
-            out.append({
-                "title": n["title"],
-                "url": n["url"],
-                "summary": n.get("description") or "",
-                "time": n.get("published_at") or "",
-                "source": "cryptopanic",
-                "id": n["url"],
-                "impact": n.get("currencies", [{}])[0].get("code") if n.get("currencies") else ""
+        r = requests.get(url, timeout=5)
+        j = r.json()
+        items = []
+        for n in j.get("results", []):
+            items.append({
+                "id": n.get("id"),
+                "title": n.get("title"),
+                "url": n.get("url"),
+                "time": n.get("published_at"),
+                "source": "cryptopanic"
             })
-    except: pass
-    # Сортировка новые сверху
-    out.sort(key=lambda x:x["time"] or "", reverse=True)
-    return jsonify({"articles": out[:20]})
+        return jsonify({"articles": items})
+    except Exception as ex:
+        return jsonify({"articles": []})
 
-@app.route("/api/comment")
-def api_comment():
-    # Комментарий от ИИ по рынку (BTC)
+@app.route('/api/openai', methods=['POST'])
+def openai_proxy():
+    data = request.json
     try:
-        prices = requests.get(COINGECKO_API).json()
-        btc = prices.get("bitcoin",{}).get("usd","-")
-        eth = prices.get("ethereum",{}).get("usd","-")
-    except: btc,eth="-","-"
-    try:
-        news = requests.get(CRYPTOPANIC_API,timeout=5).json()
-        last_news = news.get("results",[])[:2]
-        last_headlines = " | ".join([n.get("title","") for n in last_news])
-    except: last_headlines = ""
-    prompt = (
-        f"Дай свежий краткий торговый сигнал (LONG/SHORT/HODL) по BTC/USDT только по анализу графика, объёма и стакана Binance и новостей. "
-        f"Только 1 сигнал с точкой входа и обоснованием! Укажи цену BTC (${btc}), цену ETH (${eth}), последняя новость: {last_headlines}.\n"
-        f"В конце дай кратко твой прогноз до конца суток, поддержка/сопротивление. Только для трейдеров. Не используй слова ChatGPT/OpenAI. "
-    )
-    comment = ""
-    try:
+        openai.api_key = OPENAI_API_KEY
         resp = openai.ChatCompletion.create(
-            model="gpt-4o",
-            messages=[{"role":"system","content":"Ты топ крипто-трейдер, делай анализ кратко, как для профи, максимум инфы!"},
-                      {"role":"user","content":prompt}],
-            temperature=1.18,max_tokens=480,timeout=17
+            model=data.get("model","gpt-4o"),
+            messages=data["messages"],
+            temperature=data.get("temperature",1.1),
+            user="neurona"
         )
-        comment = resp.choices[0].message.content.strip()
-    except Exception as e:
-        comment = f"Ошибка анализа рынка: {str(e)}"
-    out = [{
-        "text": comment,
-        "time": time.strftime('%H:%M')
-    }]
-    return jsonify({"comments":out,"typing":False})
+        return jsonify(resp)
+    except Exception as ex:
+        return jsonify({"error": str(ex)})
 
-@app.route("/api/cmc")
-def api_cmc():
-    try:
-        r = requests.get(CMC_API,headers={"X-CMC_PRO_API_KEY":CMC_KEY},timeout=7).json()
-        return jsonify(r)
-    except: return jsonify({"data":[]})
-
-@app.route("/api/coingecko")
-def api_coingecko():
-    try:
-        q = (requests.request.args.get("q") or "").lower()
-        ids = {"btc":"bitcoin","eth":"ethereum","sol":"solana","bnb":"binancecoin"}
-        id = ids.get(q.lower(),q.lower())
-        url = f"https://api.coingecko.com/api/v3/simple/price?ids={id}&vs_currencies=usd"
-        r = requests.get(url,timeout=4).json()
-        if id in r:
-            return jsonify({"found":True,"name":id.title(),"symbol":q.upper(),"price":r[id]["usd"],"url":f"https://coingecko.com/en/coins/{id}"})
-    except: pass
-    return jsonify({"found":False})
-
-@app.route("/api/binance")
-def api_binance():
-    try:
-        symbol = (requests.request.args.get("q") or "BTC").upper()+"USDT"
-        url = f"https://api.binance.com/api/v3/ticker/bookTicker?symbol={symbol}"
-        r = requests.get(url,timeout=4).json()
-        return jsonify({"found":True,"price":r.get("bidPrice") or r.get("askPrice"),"symbol":symbol})
-    except: return jsonify({"found":False})
-
-@app.route("/")
-def index():
-    return open("index.html").read()
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
