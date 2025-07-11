@@ -9,10 +9,10 @@ import time
 app = Flask(__name__, static_folder="static")
 CORS(app)
 
-
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
 
-client = openai.OpenAI(api_key=OPENAI_API_KEY)  # ← Только api_key!
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 CACHE = {
     "signals": [],
@@ -21,10 +21,11 @@ CACHE = {
     "last_price": None,
     "last_news_id": None,
     "last_orderbook": None,
+    "last_ai_full": "",
 }
 
 def get_time(ts=None):
-    tz = timezone(timedelta(hours=3))  # Kyiv GMT+3
+    tz = timezone(timedelta(hours=3))  # Kyiv
     dt = datetime.fromtimestamp(ts or time.time(), tz)
     return dt.strftime('%d.%m %H:%M')
 
@@ -47,74 +48,17 @@ def get_coingecko_price():
         print("COINGECKO ERROR:", ex)
         return "-"
 
-def get_newsdata_news():
-    try:
-        if not NEWS_API_KEY:
-            return []
-        url = f"https://newsdata.io/api/1/news?apikey={NEWS_API_KEY}&q=bitcoin,crypto,cryptocurrency&language=en"
-        r = requests.get(url, timeout=6)
-        arr = []
-        for a in r.json().get("results", [])[:6]:
-            arr.append({
-                "id": a.get("article_id", a.get("link", "")),
-                "title": a["title"][:110],
-                "url": a["link"],
-                "time": a.get("pubDate", "")[11:16] if "pubDate" in a else "",
-                "src": "newsdata"
-            })
-        return arr
-    except Exception as ex:
-        print("NEWSDATA ERROR:", ex)
-        return []
-
-def get_cryptopanic_news():
-    try:
-        url = "https://cryptopanic.com/api/v1/posts/?auth_token=&public=true&currencies=BTC,ETH"
-        r = requests.get(url, timeout=6)
-        arr = []
-        for a in r.json().get("results", [])[:6]:
-            arr.append({
-                "id": a.get("id"),
-                "title": a["title"][:110],
-                "url": a["url"],
-                "time": a["published_at"][11:16] if "published_at" in a else "",
-                "src": "cryptopanic"
-            })
-        return arr
-    except Exception as ex:
-        print("CRYPTOPANIC ERROR:", ex)
-        return []
-
-def get_coindesk_news():
-    try:
-        url = "https://api.coindesk.com/v1/news/latest"
-        r = requests.get(url, timeout=6)
-        arr = []
-        for a in r.json().get("data", [])[:6]:
-            arr.append({
-                "id": a["id"],
-                "title": a["headline"][:110],
-                "url": a["url"],
-                "time": a["published_at"][11:16] if "published_at" in a else "",
-                "src": "coindesk"
-            })
-        return arr
-    except Exception as ex:
-        print("COINDESK ERROR:", ex)
-        return []
-
 def get_cryptocompare_news():
     try:
         url = "https://min-api.cryptocompare.com/data/v2/news/?lang=EN"
-        r = requests.get(url, timeout=6)
+        r = requests.get(url, timeout=5)
         arr = []
-        for a in r.json().get("Data", [])[:6]:
+        for a in r.json().get("Data", [])[:8]:
             arr.append({
                 "id": a["id"],
-                "title": a["title"][:110],
+                "title": a["title"][:120],
                 "url": a["url"],
-                "time": datetime.fromtimestamp(a.get("published_on", 0)).strftime("%H:%M"),
-                "src": "cryptocompare"
+                "time": datetime.fromtimestamp(a.get("published_on", 0)).strftime("%H:%M")
             })
         return arr
     except Exception as ex:
@@ -126,32 +70,44 @@ def translate_text(text):
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "user", "content": f"Переведи на русский кратко и понятно:\n\n{text}"}
+                {"role": "user", "content": f"Переведи это на русский кратко и понятно:\n\n{text}"}
             ],
             temperature=0.15,
-            max_tokens=130,
+            max_tokens=140,
         )
         return completion.choices[0].message.content
     except Exception as ex:
         print("TRANSLATE ERROR:", ex)
         return text
 
-def gen_ai_signal(price, ob, news):
+def gen_ai_signal(price, ob, news, full=False):
     news_titles = [n['title'] for n in news[:3]]
-    prompt = f"""Ты — криптоаналитик-бот NEURONA. Проанализируй Bitcoin (BTC/USDT) и дай максимально точный и обоснованный сигнал: LONG, SHORT или HODL, с коротким комментарием на русском. Данные: стакан Binance (bid: {ob['bids']} ask: {ob['asks']}), цена {price}$, свежие новости: {'; '.join(news_titles)}. Отвечай только по-русски, кратко и строго по делу."""
+    tf = "5m/15m/1h"  # Для примера можно сделать детекцию таймфрейма, если нужно больше — пиши!
+    prompt = f"""
+Ты — криптоаналитик-бот NEURONA. Дай торговый сигнал по BTC/USDT на основе стакана Binance (bid: {ob['bids']}, ask: {ob['asks']}), текущей цены {price}$, последних новостей ({'; '.join(news_titles)}).
+1. Укажи **Таймфрейм** (например: 5m, 15m, 1h).
+2. Сигнал: LONG, SHORT или HODL.
+3. Точные уровни для входа, тейк-профита, стоп-лосса.
+4. AI-комментарий — причину сигнала, основываясь на новостях, стакане и цене (строго по делу!).
+{('5. Сделай расширенный подробный анализ графика BTC по TradingView (индикаторы, уровни, тренд) и последние изменения в стакане и ленте.' if full else '')}
+Пиши только по-русски, максимально понятно, без воды.
+"""
     try:
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.18,
-            max_tokens=150,
+            max_tokens=380 if full else 170,
         )
         content = completion.choices[0].message.content
+        # Примитивно определяем тип сигнала
         signal_type = "HODL"
-        if "LONG" in content.upper() or "ЛОНГ" in content.upper():
+        upper = content.upper()
+        if "LONG" in upper or "ЛОНГ" in upper:
             signal_type = "LONG"
-        elif "SHORT" in content.upper() or "ШОРТ" in content.upper():
+        elif "SHORT" in upper or "ШОРТ" in upper:
             signal_type = "SHORT"
+        # Разбивка на full и обычный сигнал
         return {
             "id": int(time.time()),
             "type": signal_type,
@@ -188,43 +144,39 @@ def api_all():
     now = time.time()
     price = get_coingecko_price()
     ob = get_binance_orderbook()
-    news_sources = [
-        get_newsdata_news(),
-        get_coindesk_news(),
-        get_cryptopanic_news(),
-        get_cryptocompare_news(),
-    ]
-    news = []
-    ids = set()
-    for src in news_sources:
-        for n in src:
-            if n['id'] not in ids:
-                n['title'] = translate_text(n['title'])
-                news.append(n)
-                ids.add(n['id'])
-    news = sorted(news, key=lambda x: str(x['time']))[-8:]
+    news = get_cryptocompare_news()
+    for n in news:
+        n['title'] = translate_text(n['title'])
 
-    do_analyze = False
-    if (
+    # Стартовый (полный) AI-анализ только при первом заходе (или старте приложения)
+    if not CACHE["last_ai_full"]:
+        ai_full = gen_ai_signal(price, ob, news, full=True)
+        CACHE["last_ai_full"] = ai_full["text"]
+        CACHE["signals"].append(ai_full)
+        CACHE["signals"] = CACHE["signals"][-10:]
+        CACHE["last_price"] = price
+        CACHE["last_orderbook"] = ob
+        CACHE["last_ts"] = now
+        CACHE["news"] = news[:8]
+
+    # Обычный сигнал — только если что-то изменилось
+    elif (
         CACHE['last_price'] != price
-        or CACHE['last_news_id'] != (news[-1]['id'] if news else None)
         or CACHE['last_orderbook'] != ob
+        or (news and news[-1]['id'] != (CACHE['news'][-1]['id'] if CACHE['news'] else None))
     ):
-        do_analyze = True
-
-    if do_analyze:
-        ai_signal = gen_ai_signal(price, ob, news)
+        ai_signal = gen_ai_signal(price, ob, news, full=False)
         CACHE["signals"].append(ai_signal)
         CACHE["signals"] = CACHE["signals"][-10:]
         CACHE['last_price'] = price
-        CACHE['last_news_id'] = news[-1]['id'] if news else None
         CACHE['last_orderbook'] = ob
-        CACHE["news"] = news[-8:]
+        CACHE["news"] = news[:8]
         CACHE["last_ts"] = now
 
+    # Ответ
     return jsonify({
-        "signals": CACHE["signals"][-10:],
-        "news": CACHE["news"][-3:]
+        "signals": CACHE["signals"][-5:],   # Верхнее окно — только сигналы/комменты
+        "news": CACHE["news"][:6]           # Нижнее окно — новости
     })
 
 if __name__ == "__main__":
