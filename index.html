@@ -2,88 +2,247 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=420,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
   <title>NEURONA Trade AI</title>
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#fff">
+  <meta name="theme-color" content="#f7f8fa">
+  <link rel="icon" type="image/png" href="https://i.ibb.co/XfKRzvcy/27.png">
   <style>
     html,body{
-      height:100%;margin:0;padding:0;background:#fff;
-      font-family:'Segoe UI',Arial,sans-serif;color:#111;
-      width:100vw;max-width:100vw;overflow:hidden;
+      height:100%;
+      margin:0;
+      padding:0;
+      background:#f7f8fa;
+      font-family:'Segoe UI',Arial,sans-serif;
+      color:#111;
+      overscroll-behavior:none;
+      width:100vw;
+      max-width:100vw;
+      overflow-x:hidden;
     }
     body{
       min-height:100vh;
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-      background:#fff;width:100vw;max-width:100vw;overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      width:100vw;
+      max-width:100vw;
+      overflow-x:hidden;
     }
     .wrap{
-      width:375px;max-width:100vw;min-height:100vh;
-      box-sizing:border-box;display:flex;flex-direction:column;
-      justify-content:flex-start;align-items:center;
-      background:#fff;margin:0 auto;padding:0;position:relative;
-      overflow:hidden;
+      width:100vw;
+      max-width:430px;
+      min-height:100vh;
+      box-sizing:border-box;
+      display:flex;
+      flex-direction:column;
+      justify-content:flex-start;
+      align-items:center;
+      background:#f7f8fa;
+      margin:0 auto;
+      padding:0;
+      position:relative;
+      overflow-x:hidden;
     }
     .topbar{
-      width:100%;max-width:375px;margin:0 auto;
-      display:flex;align-items:center;justify-content:space-between;
-      padding:17px 10px 10px 8px;
-      background:#fff;position:sticky;top:0;z-index:4;
-      border-bottom:1px solid #eee;box-sizing:border-box;
+      width:100%;
+      max-width:430px;
+      margin:0 auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:19px 13px 13px 13px;
+      background:#f7f8fa;
+      position:sticky;
+      top:0;
+      z-index:5;
+      border-bottom:1px solid #eee;
+      box-sizing:border-box;
     }
     .logo{
-      display:flex;align-items:center;gap:12px;
-      font-weight:700;font-size:1.12rem;letter-spacing:0.05em;color:#222;white-space:nowrap;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:700;
+      font-size:1.20rem;
+      letter-spacing:0.05em;
+      color:#222;
+      white-space:nowrap;
     }
-    .logo img{width:32px;height:32px;border-radius:8px;margin-right:5px;vertical-align:middle;background:#fafafa;}
-    .bell{cursor:pointer;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s;position:relative;}
-    .bell img{width:22px;height:22px;display:block;opacity:1;transition:opacity .2s;}
-    .bell.bell-off img{opacity:0.4;}
-    .bell:hover{background:#f3f3f3;}
+    .logo img{
+      width:33px;
+      height:33px;
+      border-radius:9px;
+      margin-right:6px;
+      vertical-align:middle;
+      background:#fafafa;
+    }
+    .bell{
+      cursor:pointer;
+      width:30px;
+      height:30px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:50%;
+      transition:background .2s;
+      position:relative;
+      background:transparent;
+      margin-right:2px;
+    }
+    .bell img{
+      width:22px;
+      height:22px;
+      display:block;
+      opacity:1;
+      transition:opacity .2s;
+    }
+    .bell.bell-off img{
+      opacity:0.33;
+    }
+    .bell:hover{background:#ececec;}
     .main{
-      flex:1 1 0;width:100%;max-width:375px;
-      display:flex;flex-direction:column;gap:0;background:#fff;
-      min-height:420px;position:relative;margin:0 auto;box-sizing:border-box;
-      overflow:hidden;align-items:center;justify-content:flex-start;
+      width:100vw;
+      max-width:430px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      background:#f7f8fa;
+      min-height:560px;
+      margin:0 auto;
+      box-sizing:border-box;
+      align-items:center;
+      justify-content:flex-start;
+      padding-bottom:16px;
+    }
+    .signals-box, .news-box{
+      width:95vw;
+      max-width:410px;
+      margin:0 auto 7px auto;
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 1px 6px #0001;
+      padding:0 0 3px 0;
+      box-sizing:border-box;
+      overflow-x:hidden;
+      position:relative;
     }
     .signals-box{
-      width:100%;max-width:375px;height:160px;background:#fff;flex:0 0 auto;
-      display:flex;flex-direction:column;align-items:center;justify-content:flex-end;
-      overflow-y:auto;overflow-x:hidden;margin-bottom:10px;box-sizing:border-box;
-      border-bottom:1px solid #f1f1f1;scroll-behavior:smooth;
+      height:210px;
+      overflow-y:auto;
+      margin-bottom:7px;
+    }
+    .news-box{
+      height:160px;
+      overflow-y:auto;
     }
     .signal-msg{
-      width:95%;margin:6px auto 6px auto;background:#fafbfc;
-      border-radius:14px;box-shadow:0 1px 3px #0001;
-      padding:11px 13px 11px 13px;display:flex;flex-direction:column;
-      align-items:flex-start;font-size:1.03rem;line-height:1.6;
-      word-break:break-word;position:relative;color:#192e43;
+      width:96%;
+      margin:9px auto 7px auto;
+      background:#f5f7fb;
+      border-radius:12px;
+      box-shadow:0 1px 3px #0001;
+      padding:11px 12px 13px 12px;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      font-size:1.07rem;
+      line-height:1.6;
+      word-break:break-word;
+      color:#1b2433;
     }
-    .signal-type{font-weight:700;text-transform:uppercase;font-size:1em;margin-bottom:2px;}
-    .signal-type.LONG{color:#13b05b;}
-    .signal-type.SHORT{color:#e94444;}
-    .signal-type.HODL{color:#a5a5a5;}
-    .signal-msg .time{color:#a5a5a5;font-size:0.95em;position:absolute;right:15px;bottom:9px;margin:0;padding:0;font-weight:400;}
-    .news-box{
-      width:100%;max-width:375px;height:120px;display:flex;flex-direction:column;
-      align-items:center;overflow-y:auto;background:#fff;padding:0 0 7px 0;
-      margin:0 auto;box-sizing:border-box;overflow-x:hidden;
+    .signal-type{
+      font-weight:700;
+      text-transform:uppercase;
+      font-size:1.04em;
+      margin-bottom:2px;
+      color:#2094e6;
+    }
+    .signal-msg .time{
+      color:#a5a5a5;
+      font-size:0.94em;
+      position:absolute;
+      right:19px;
+      bottom:7px;
+      margin:0;
+      padding:0;
+      font-weight:400;
     }
     .news-msg{
-      width:95%;margin:0 auto 7px auto;display:flex;align-items:center;justify-content:space-between;
-      gap:10px;padding:8px 8px 8px 10px;border-radius:11px;background:#f6f8fc;
-      font-size:0.97rem;line-height:1.35;word-break:break-word;
+      width:96%;
+      margin:0 auto 8px auto;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:7px;
+      padding:10px 10px 10px 9px;
+      border-radius:12px;
+      background:#f7fafc;
+      font-size:1.02rem;
+      line-height:1.45;
+      word-break:break-word;
     }
-    .news-title{color:#1671e6;text-decoration:none;font-weight:500;font-size:1em;word-break:break-word;cursor:pointer;transition:color .19s;}
-    .news-title:hover{color:#0d3dc6;text-decoration:underline;}
-    .news-msg .time{color:#b0b0b0;font-size:0.96em;min-width:39px;text-align:right;font-weight:400;margin-left:7px;}
-    .notif-popup{position:fixed;left:50%;bottom:34px;transform:translateX(-50%);min-width:140px;background:#202020;color:#fff;font-size:1em;border-radius:13px;padding:11px 19px;z-index:10;text-align:center;opacity:0;pointer-events:none;transition:opacity .34s;}
-    .notif-popup.show{opacity:1;pointer-events:auto;}
+    .news-title{
+      color:#2578e5;
+      text-decoration:none;
+      font-weight:500;
+      font-size:1.03em;
+      cursor:pointer;
+      transition:color .19s;
+      flex:1;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+      max-width:280px;
+    }
+    .news-title:hover{
+      color:#0d3dc6;
+      text-decoration:underline;
+    }
+    .news-msg .time{
+      color:#b0b0b0;
+      font-size:0.98em;
+      min-width:41px;
+      text-align:right;
+      font-weight:400;
+      margin-left:5px;
+    }
+    .notif-popup{
+      position:fixed;
+      left:50%;
+      bottom:36px;
+      transform:translateX(-50%);
+      min-width:145px;
+      background:#202020;
+      color:#fff;
+      font-size:1.01em;
+      border-radius:16px;
+      padding:11px 24px;
+      z-index:50;
+      text-align:center;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .32s;
+    }
+    .notif-popup.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+    @media (max-width:500px){
+      .wrap, .main, .topbar, .signals-box, .news-box{
+        max-width:100vw;
+        width:100vw;
+      }
+      .signal-msg, .news-msg{
+        width:97vw;
+      }
+      .signals-box{height:31vh;}
+      .news-box{height:18vh;}
+    }
     @media (max-width:400px){
-      .wrap, .main, .topbar, .signals-box, .news-box{max-width:100vw;width:100vw;}
-      .signal-msg, .news-msg{width:97vw;}
-      .signals-box{height:27vh;}
-      .news-box{height:15vh;}
+      .signal-msg, .news-msg{font-size:0.97rem;}
+      .signals-box, .news-box{max-width:99vw;}
     }
   </style>
 </head>
@@ -112,7 +271,7 @@ const bellIcon = document.getElementById('bellIcon');
 function showPopup(msg){
   notifPopup.textContent = msg;
   notifPopup.classList.add('show');
-  setTimeout(()=>notifPopup.classList.remove('show'),2400);
+  setTimeout(()=>notifPopup.classList.remove('show'),2100);
 }
 function toggleBell(active){
   notificationEnabled = !!active;
@@ -121,7 +280,8 @@ function toggleBell(active){
 }
 bell.onclick = async function(){
   if(notificationEnabled){
-    toggleBell(false);showPopup('Уведомления выключены');
+    toggleBell(false);
+    showPopup('Уведомления выключены');
     return;
   }
   if('Notification' in window){
@@ -160,7 +320,7 @@ async function fetchSignalsNews(manual){
     if(data.signals && Array.isArray(data.signals)){
       data.signals.forEach(sig=>{
         let t = `<div class="signal-msg">
-          <div class="signal-type ${sig.type}">${sig.type}</div>
+          <div class="signal-type">${sig.type}</div>
           <div>${sig.text}</div>
           <div class="time">${sig.time}</div>
         </div>`;
@@ -168,7 +328,7 @@ async function fetchSignalsNews(manual){
       });
       if(data.signals.length && data.signals[data.signals.length-1].id!=lastSignalId){
         lastSignalId = data.signals[data.signals.length-1].id;
-        pushNotification('Крипто-сигнал',data.signals[data.signals.length-1].type+': '+data.signals[data.signals.length-1].text);
+        if(!manual) pushNotification('AI-сигнал BTC',data.signals[data.signals.length-1].type+': '+data.signals[data.signals.length-1].text);
       }
     }
     // NEWS
@@ -183,14 +343,14 @@ async function fetchSignalsNews(manual){
       });
       if(data.news.length && data.news[data.news.length-1].id!=lastNewsId){
         lastNewsId = data.news[data.news.length-1].id;
-        pushNotification('Крипто-новость',data.news[data.news.length-1].title);
+        if(!manual) pushNotification('Крипто-новость',data.news[data.news.length-1].title);
       }
     }
   }catch(e){
     showPopup('Ошибка загрузки');
   }
 }
-setInterval(()=>fetchSignalsNews(false),20000);
+setInterval(()=>fetchSignalsNews(false),37000);
 fetchSignalsNews(false);
 </script>
 </body>
