@@ -27,6 +27,23 @@
       background:none;border:none;outline:none;display:inline-flex;align-items:center;justify-content:center;
     }
     .notif-bell.active{filter: grayscale(0);}
+    .refresh-btn{
+      margin-left:14px;
+      padding:0 20px;
+      height:32px;
+      background:#e1e7ff;
+      border:1.2px solid #b4c6f9;
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      font-size:1.02em;
+      color:#2051ba;
+      cursor:pointer;
+      font-weight:600;
+      transition:background .14s, border .14s;
+      box-shadow:0 1px 4px #2451b71a;
+    }
+    .refresh-btn:hover{background:#d2e1ff;}
     @media(max-width:400px){.top-title{font-size:1.02rem;}}
     #main{
       position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;
@@ -35,7 +52,13 @@
     .card-block{
       background:#fff;border-radius:18px;box-shadow:0 3px 24px #0001,0 1px 5px #2222;
       padding:0;margin-bottom:15px;display:flex;flex-direction:column;align-items:stretch;
-      width:100%;min-height:50px;max-height:360px;overflow:hidden;
+      width:100%;min-height:50px;overflow:hidden;
+    }
+    .card-block.signals{
+      max-height:270px; min-height:140px;
+    }
+    .card-block.news{
+      max-height:180px; min-height:120px;
     }
     .signals-header, .news-header{
       display:flex;align-items:center;justify-content:space-between;
@@ -45,7 +68,7 @@
     }
     .news-header{color:#777;}
     .signals-content, .news-content{
-      flex:1;overflow-y:auto;padding:2px 18px 12px 20px;
+      flex:1;overflow-y:auto;padding:2px 18px 12px 24px;
       font-size:1.05em;line-height:1.57;color:#20232d;
       scrollbar-width:thin;scrollbar-color:#b2b9c5 #ededed;
       background:transparent;
@@ -59,15 +82,18 @@
       background:#b2b9c5;border-radius:8px;
     }
     .signal-row{
-      margin-bottom:16px;background:#eef3fb;border-radius:12px;padding:13px 13px 10px 13px;
+      margin-bottom:12px;background:#eef3fb;border-radius:12px;padding:13px 13px 11px 13px;
       box-shadow:0 2px 8px #2451b726;
       border-left:4px solid #2451b7;
+      display:flex; flex-direction:column; gap:8px;
     }
     .signal-title{font-weight:bold;color:#2051ba;font-size:1.14em;letter-spacing:.01em;}
-    .signal-params{margin:7px 0 0 0;}
-    .signal-param{margin-bottom:3px;}
-    .signal-reason{margin-top:8px;color:#444;}
-    .signal-time{display:block;color:#888;font-size:0.97em;margin-top:7px;}
+    .signal-params{margin:0 0 2px 0; padding-left:6px;}
+    .signal-param{margin-bottom:1px;}
+    .signal-reason{margin:0 0 0 6px;color:#444;padding-top:2px;}
+    .signal-time{display:block;color:#888;font-size:0.97em;margin-top:4px;margin-left:4px;}
+    .signal-list{padding-left:17px; margin:0;}
+    .signal-list li{margin-bottom:1px;}
     .typing-dots{
       display:inline-flex;gap:2.7px;vertical-align:middle;align-items:flex-end;margin:8px 0 0 6px;
     }
@@ -81,7 +107,7 @@
       50%{opacity:1;}
     }
     .news-list{list-style:none;padding:0;margin:0;}
-    .news-item{margin-bottom:15px;}
+    .news-item{margin-bottom:11px;}
     .news-link{color:#2051ba;text-decoration:none;font-weight:500;word-break:break-word;}
     .news-meta{display:block;color:#888;font-size:0.92em;margin-top:2px;}
     .news-impact{color:#b25c3a;font-size:.98em;}
@@ -105,6 +131,8 @@
     body.dark .news-impact{color:#f1b45a;}
     body.dark .top-bar{background:#222;}
     body.dark .top-title{color:#fff;}
+    body.dark .refresh-btn{background:#2f3162;color:#bcd2ff;border-color:#4252a5;}
+    body.dark .refresh-btn:hover{background:#262951;}
   </style>
 </head>
 <body>
@@ -114,12 +142,15 @@
     <img src="https://i.ibb.co/Mk4WpHL9/25-1.png" class="top-logo" alt="logo">
     <span class="top-title">NEURONA Trade AI</span>
   </div>
-  <button class="notif-bell" id="notifBell" title="Включить уведомления">
-    <svg viewBox="0 0 28 28" width="23" height="23" fill="none" stroke="#8b8b8b" stroke-width="2"><path d="M14 24a2 2 0 002-2H12a2 2 0 002 2zm6-4V12a6 6 0 10-12 0v8l-2 2v1h16v-1l-2-2z"/></svg>
-  </button>
+  <div style="display:flex;align-items:center;">
+    <button class="notif-bell" id="notifBell" title="Включить уведомления">
+      <svg viewBox="0 0 28 28" width="23" height="23" fill="none" stroke="#8b8b8b" stroke-width="2"><path d="M14 24a2 2 0 002-2H12a2 2 0 002 2zm6-4V12a6 6 0 10-12 0v8l-2 2v1h16v-1l-2-2z"/></svg>
+    </button>
+    <button class="refresh-btn" id="refreshBtn" title="Обновить">Обновить</button>
+  </div>
 </div>
 <div id="main">
-  <div class="card-block" style="max-height:260px;">
+  <div class="card-block signals">
     <div class="signals-header">AI сигналы</div>
     <div class="signals-content" id="signalsArea">
       <div id="typingSignals" style="display:none;">
@@ -131,7 +162,7 @@
       </div>
     </div>
   </div>
-  <div class="card-block" style="max-height:200px;">
+  <div class="card-block news">
     <div class="news-header">Новости крипторынка</div>
     <div class="news-content" id="newsArea">
       <div id="typingNews" style="display:none;">
@@ -202,6 +233,10 @@ if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js');
 }
 
+// --- Обновление по клику на refresh ---
+const refreshBtn = document.getElementById('refreshBtn');
+refreshBtn.onclick = ()=>reloadAll();
+
 // --- Загрузка AI-сигналов ---
 const signalsArea = document.getElementById('signalsArea');
 const newsArea = document.getElementById('newsArea');
@@ -213,41 +248,22 @@ async function fetchSignals(){
   typingSignals.style.display = 'block';
   signalsArea.scrollTop = signalsArea.scrollHeight;
   try {
-    // let res = await fetch('/api/signals');
-    // let arr = await res.json();
-    // Демо: пример форматирования сигнала!
-    let arr = [
-      {
-        type: 'LONG',
-        timeframe: '15м',
-        entry: '117650$',
-        tp: '118500$',
-        sl: '116100$',
-        reason: 'Технический отскок от сильной поддержки 117650$. Объёмы растут, позитивные новости по ETF.',
-        time: new Date().toLocaleTimeString().slice(0,5)
-      },
-      {
-        type: 'SHORT',
-        timeframe: '1ч',
-        entry: '118700$',
-        tp: '117200$',
-        sl: '119550$',
-        reason: 'Зона сопротивления. Пробой не подтверждён по объёмам. Рынок перекуплен.',
-        time: new Date().toLocaleTimeString().slice(0,5)
-      }
-    ];
-    await new Promise(r=>setTimeout(r,1000));
+    let res = await fetch('/api/all');
+    let data = await res.json();
+    let arr = data.signals || [];
     signalsArea.innerHTML = arr.map(s=>`
       <div class="signal-row">
         <div class="signal-title">${s.type}</div>
         <div class="signal-params">
-          <div class="signal-param"><b>Таймфрейм:</b> ${s.timeframe}</div>
-          <div class="signal-param"><b>Вход:</b> ${s.entry}</div>
-          <div class="signal-param"><b>Тейк-профит:</b> ${s.tp}</div>
-          <div class="signal-param"><b>Стоп-лосс:</b> ${s.sl}</div>
+          <ul class="signal-list">
+            <li><b>Таймфрейм:</b> ${s.timeframe||'-'}</li>
+            <li><b>Вход:</b> ${s.entry||'-'}</li>
+            <li><b>Тейк-профит:</b> ${s.tp||'-'}</li>
+            <li><b>Стоп-лосс:</b> ${s.sl||'-'}</li>
+          </ul>
         </div>
-        <div class="signal-reason"><b>Почему:</b> ${s.reason}</div>
-        <span class="signal-time">${s.time}</span>
+        <div class="signal-reason"><b>Почему:</b> ${s.reason||'-'}</div>
+        <span class="signal-time">${s.time||''}</span>
       </div>
     `).join('');
   } catch(e){
@@ -260,29 +276,13 @@ async function fetchNews(){
   typingNews.style.display = 'block';
   newsArea.scrollTop = newsArea.scrollHeight;
   try {
-    // let res = await fetch('/api/news');
-    // let arr = await res.json();
-    let arr = [
-      {
-        title: 'Bitcoin ETF приток инвестиций достиг $50 млрд — новый рекорд',
-        url: 'https://cryptonews.com/news/etf-50b.html',
-        source: 'cryptonews',
-        time: new Date().toLocaleTimeString().slice(0,5),
-        impact: 'BTC'
-      },
-      {
-        title: 'SEC одобрила запуск спотовых ETH ETF',
-        url: 'https://news.bitcoin.com/sec-eth-etf-approved',
-        source: 'bitcoincom',
-        time: new Date().toLocaleTimeString().slice(0,5),
-        impact: 'ETH'
-      }
-    ];
-    await new Promise(r=>setTimeout(r,900));
+    let res = await fetch('/api/all');
+    let data = await res.json();
+    let arr = data.news || [];
     newsArea.innerHTML = '<ul class="news-list">'+arr.map(n=>`
       <li class="news-item">
         <a href="${n.url}" class="news-link" target="_blank">${n.title}</a>
-        <span class="news-meta">${n.source} • ${n.time}${n.impact ? ' <span class="news-impact">['+n.impact+']</span>' : ''}</span>
+        <span class="news-meta">${n.time}</span>
       </li>
     `).join('')+'</ul>';
   } catch(e){
@@ -299,7 +299,6 @@ async function reloadAll(){
 reloadAll();
 setInterval(reloadAll, 60000); // каждые 60 сек
 
-// --- Если хочешь: добавить тёмную тему/языки — добавь аналогично по паттерну с локалстораджем!
 </script>
 </body>
 </html>
