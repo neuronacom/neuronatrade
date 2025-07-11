@@ -11,8 +11,6 @@ app = Flask(__name__, static_folder="static")
 CORS(app)
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-NEWS_API_KEY = os.environ.get("NEWS_API_KEY", "")
-
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 CACHE = {
@@ -32,14 +30,19 @@ def get_time(ts=None):
 
 def get_binance_orderbook():
     try:
-        r = requests.get("https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=5", timeout=3)
+        r = requests.get("https://api.binance.com/api/v3/depth?symbol=BTCUSDT&limit=10", timeout=3)
         j = r.json()
-        bids = float(j["bids"][0][0])
-        asks = float(j["asks"][0][0])
-        return {"bids": bids, "asks": asks}
+        top_bids = sum(float(x[1]) for x in j["bids"][:5])
+        top_asks = sum(float(x[1]) for x in j["asks"][:5])
+        return {
+            "best_bid": float(j["bids"][0][0]),
+            "best_ask": float(j["asks"][0][0]),
+            "bid_vol": top_bids,
+            "ask_vol": top_asks
+        }
     except Exception as ex:
         print("BINANCE ERROR:", ex)
-        return {"bids": "-", "asks": "-"}
+        return {"best_bid": "-", "best_ask": "-", "bid_vol": "-", "ask_vol": "-"}
 
 def get_coingecko_price():
     try:
@@ -73,7 +76,7 @@ def translate_text(text):
             messages=[
                 {"role": "user", "content": f"Переведи это на русский кратко и понятно:\n\n{text}"}
             ],
-            temperature=0.15,
+            temperature=0.13,
             max_tokens=140,
         )
         return completion.choices[0].message.content
@@ -82,15 +85,7 @@ def translate_text(text):
         return text
 
 def parse_signal(text):
-    # Извлекаем из текста четкие параметры сигнала
-    result = {
-        "type": "",
-        "timeframe": "",
-        "entry": "",
-        "tp": "",
-        "sl": "",
-        "reason": ""
-    }
+    result = {"type": "", "timeframe": "", "entry": "", "tp": "", "sl": "", "reason": ""}
     # Тип сигнала
     match_type = re.search(r'\b(LONG|SHORT|HODL|ЛОНГ|ШОРТ)\b', text.upper())
     if match_type:
@@ -118,7 +113,6 @@ def parse_signal(text):
         result["reason"] = match_reason.group(2).strip()
     # Fallback для причины
     if not result["reason"]:
-        # берем последний абзац
         blocks = [b.strip() for b in text.split('\n') if b.strip()]
         if blocks:
             result["reason"] = blocks[-1]
@@ -126,38 +120,31 @@ def parse_signal(text):
 
 def gen_ai_signal(price, ob, news, full=False):
     news_titles = [n['title'] for n in news[:3]]
-    tf = "5m/15m/1h"
     prompt = f"""
-Ты — криптоаналитик-бот NEURONA. Дай только один четкий проверенный торговый сигнал по BTC/USDT для фьючерсов на основе стакана Binance (bid: {ob['bids']}, ask: {ob['asks']}), текущей цены {price}.
+Ты — профессиональный трейдинг-бот NEURONA. Проанализируй BTC/USDT на Binance для фьючерсов и выдай только один качественный торговый сигнал по шаблону:
 
-Строгая структура ответа:
-1. Таймфрейм: (например: 5m, 15m, 1h)
+1. Таймфрейм: (например: 5m, 15m, 1h, 4h, 1d)
 2. Сигнал: LONG, SHORT или HODL.
 3. Вход (Entry): четкая цена.
 4. Тейк-профит (TP): четкая цена.
 5. Стоп-лосс (SL): четкая цена.
-6. Почему: 1-2 предложения — причина сигнала, основываясь на новостях, стакане и цене (без воды, только суть, не повторяй структуру).
+6. Почему: Причина сигнала на русском (основываясь на стакане, объёмах, цене, последних новостях: {"; ".join(news_titles)}).
 
-Не пиши дополнительные комментарии, анализы и рассуждения вне этих пунктов.
-Пиши только по-русски, максимально понятно, без воды.
+Данные для анализа:
+- Стакан Binance (лучшие цены): Bid: {ob['best_bid']}, Ask: {ob['best_ask']}, Объемы: Bid {ob['bid_vol']} / Ask {ob['ask_vol']}
+- Цена BTC: {price} USD
 
-Пример формата:
-Таймфрейм: 15m
-Сигнал: LONG
-Вход: 61750
-Тейк-профит: 62500
-Стоп-лосс: 61300
-Почему: Цена отбилась от поддержки, объемы растут, новости позитивные.
+Не добавляй лишних комментариев или фраз типа “не могу дать совет”. Всегда пиши только по шаблону, даже если рынок неясен (например, просто HODL).
+Пиши только структурированный сигнал, как описано выше.
 """
     try:
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.13,
-            max_tokens=200,
+            temperature=0.11,
+            max_tokens=220,
         )
         content = completion.choices[0].message.content.strip()
-        # Разбор по структуре
         parsed = parse_signal(content)
         parsed["text"] = content
         parsed["time"] = get_time()
@@ -225,10 +212,9 @@ def api_all():
         CACHE["news"] = news[:8]
         CACHE["last_ts"] = now
 
-    # Ответ
     return jsonify({
-        "signals": CACHE["signals"][-5:],   # Верхнее окно — только сигналы/комменты
-        "news": CACHE["news"][:6]           # Нижнее окно — новости
+        "signals": CACHE["signals"][-5:],
+        "news": CACHE["news"][:6]
     })
 
 if __name__ == "__main__":
