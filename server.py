@@ -5,6 +5,7 @@ from flask_cors import CORS
 from datetime import datetime, timezone, timedelta
 import openai
 import time
+import re
 
 app = Flask(__name__, static_folder="static")
 CORS(app)
@@ -80,45 +81,96 @@ def translate_text(text):
         print("TRANSLATE ERROR:", ex)
         return text
 
+def parse_signal(text):
+    # Извлекаем из текста четкие параметры сигнала
+    result = {
+        "type": "",
+        "timeframe": "",
+        "entry": "",
+        "tp": "",
+        "sl": "",
+        "reason": ""
+    }
+    # Тип сигнала
+    match_type = re.search(r'\b(LONG|SHORT|HODL|ЛОНГ|ШОРТ)\b', text.upper())
+    if match_type:
+        t = match_type.group(1).upper()
+        result["type"] = "LONG" if t in ['LONG', 'ЛОНГ'] else ("SHORT" if t in ['SHORT', 'ШОРТ'] else "HODL")
+    # Таймфрейм
+    match_tf = re.search(r'Таймфрейм[^\w:]*:?[\s\-]*([^\n,\.]+)', text, re.IGNORECASE)
+    if match_tf:
+        result["timeframe"] = match_tf.group(1).strip()
+    # Вход
+    match_entry = re.search(r'Вход[^\w:]*:?[\s\-]*([\d\.,]+)', text, re.IGNORECASE)
+    if match_entry:
+        result["entry"] = match_entry.group(1).strip()
+    # TP
+    match_tp = re.search(r'(Тейк.?профит|TP)[^\w:]*:?[\s\-]*([\d\.,]+)', text, re.IGNORECASE)
+    if match_tp:
+        result["tp"] = match_tp.group(2).strip()
+    # SL
+    match_sl = re.search(r'(Стоп.?лосс|SL)[^\w:]*:?[\s\-]*([\d\.,]+)', text, re.IGNORECASE)
+    if match_sl:
+        result["sl"] = match_sl.group(2).strip()
+    # Причина
+    match_reason = re.search(r'(Почему|AI.?комментарий)[^\n:]*:?[\s\-]*(.+)', text, re.IGNORECASE)
+    if match_reason:
+        result["reason"] = match_reason.group(2).strip()
+    # Fallback для причины
+    if not result["reason"]:
+        # берем последний абзац
+        blocks = [b.strip() for b in text.split('\n') if b.strip()]
+        if blocks:
+            result["reason"] = blocks[-1]
+    return result
+
 def gen_ai_signal(price, ob, news, full=False):
     news_titles = [n['title'] for n in news[:3]]
-    tf = "5m/15m/1h"  # Для примера можно сделать детекцию таймфрейма, если нужно больше — пиши!
+    tf = "5m/15m/1h"
     prompt = f"""
-Ты — криптоаналитик-бот NEURONA. Дай торговый сигнал по BTC/USDT на основе стакана Binance (bid: {ob['bids']}, ask: {ob['asks']}), текущей цены {price}$, последних новостей ({'; '.join(news_titles)}).
-1. Укажи **Таймфрейм** (например: 5m, 15m, 1h).
+Ты — криптоаналитик-бот NEURONA. Дай только один четкий проверенный торговый сигнал по BTC/USDT для фьючерсов на основе стакана Binance (bid: {ob['bids']}, ask: {ob['asks']}), текущей цены {price}.
+
+Строгая структура ответа:
+1. Таймфрейм: (например: 5m, 15m, 1h)
 2. Сигнал: LONG, SHORT или HODL.
-3. Точные уровни для входа, тейк-профита, стоп-лосса.
-4. AI-комментарий — причину сигнала, основываясь на новостях, стакане и цене (строго по делу!).
-{('5. Сделай расширенный подробный анализ графика BTC по TradingView (индикаторы, уровни, тренд) и последние изменения в стакане и ленте.' if full else '')}
+3. Вход (Entry): четкая цена.
+4. Тейк-профит (TP): четкая цена.
+5. Стоп-лосс (SL): четкая цена.
+6. Почему: 1-2 предложения — причина сигнала, основываясь на новостях, стакане и цене (без воды, только суть, не повторяй структуру).
+
+Не пиши дополнительные комментарии, анализы и рассуждения вне этих пунктов.
 Пиши только по-русски, максимально понятно, без воды.
+
+Пример формата:
+Таймфрейм: 15m
+Сигнал: LONG
+Вход: 61750
+Тейк-профит: 62500
+Стоп-лосс: 61300
+Почему: Цена отбилась от поддержки, объемы растут, новости позитивные.
 """
     try:
         completion = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.18,
-            max_tokens=380 if full else 170,
+            temperature=0.13,
+            max_tokens=200,
         )
-        content = completion.choices[0].message.content
-        # Примитивно определяем тип сигнала
-        signal_type = "HODL"
-        upper = content.upper()
-        if "LONG" in upper or "ЛОНГ" in upper:
-            signal_type = "LONG"
-        elif "SHORT" in upper or "ШОРТ" in upper:
-            signal_type = "SHORT"
-        # Разбивка на full и обычный сигнал
-        return {
-            "id": int(time.time()),
-            "type": signal_type,
-            "text": content,
-            "time": get_time()
-        }
+        content = completion.choices[0].message.content.strip()
+        # Разбор по структуре
+        parsed = parse_signal(content)
+        parsed["text"] = content
+        parsed["time"] = get_time()
+        return parsed
     except Exception as e:
         print("OPENAI ERROR:", e)
         return {
-            "id": int(time.time()),
             "type": "HODL",
+            "timeframe": "",
+            "entry": "",
+            "tp": "",
+            "sl": "",
+            "reason": "Анализ временно недоступен.",
             "text": "Анализ временно недоступен.",
             "time": get_time()
         }
